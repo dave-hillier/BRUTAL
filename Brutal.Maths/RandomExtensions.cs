@@ -18,7 +18,12 @@ public static class RandomExtensions
         if (maxValue < 0)
             throw new ArgumentOutOfRangeException(nameof(maxValue), @"maxValue must be greater than or equal to 0");
 
-        return random.NextSingle() * maxValue;
+        var value = random.NextSingle() * maxValue;
+        // A subnormal maxValue lets the product round up to it; step back below it to keep the bound exclusive
+        if (value >= maxValue && maxValue > 0)
+            value = float.BitDecrement(maxValue);
+
+        return value;
     }
 
     /// <inheritdoc cref="NextSingle(System.Random, float)" />
@@ -27,7 +32,12 @@ public static class RandomExtensions
         if (maxValue < 0)
             throw new ArgumentOutOfRangeException(nameof(maxValue), @"maxValue must be greater than or equal to 0");
 
-        return random.NextDouble() * maxValue;
+        var value = random.NextDouble() * maxValue;
+        // A subnormal maxValue lets the product round up to it; step back below it to keep the bound exclusive
+        if (value >= maxValue && maxValue > 0)
+            value = double.BitDecrement(maxValue);
+
+        return value;
     }
 
     /// <summary>
