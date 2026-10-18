@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="Brutal.Core.Tests/Brutal.Core.Tests.csproj" />
+  <Project Path="Brutal.Core/Brutal.Core.csproj" />
+  <Project Path="Brutal.Memory/Brutal.Memory.csproj" />
+</Solution>
