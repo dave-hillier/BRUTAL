@@ -47,6 +47,7 @@ public static partial class GltfLoaderExtensions
     ///   <item>Node explicit matrix transforms (Z row and Z column negated)</item>
     ///   <item>Mesh vertex positions and normals (Z negated)</item>
     ///   <item>Mesh tangents (Z negated, handedness sign W negated)</item>
+    ///   <item>Morph target position, normal and tangent displacements (Z negated)</item>
     ///   <item>Index buffers (triangle winding reversed)</item>
     ///   <item>Skin inverse bind matrices (Z row and Z column negated)</item>
     ///   <item>Animation translation tracks (Z negated)</item>
@@ -66,6 +67,7 @@ public static partial class GltfLoaderExtensions
     ///   <item>Node explicit matrix transforms (Z row and Z column negated)</item>
     ///   <item>Mesh vertex positions and normals (Z negated)</item>
     ///   <item>Mesh tangents (Z negated, handedness sign W negated)</item>
+    ///   <item>Morph target position, normal and tangent displacements (Z negated)</item>
     ///   <item>Index buffers (triangle winding reversed)</item>
     ///   <item>Skin inverse bind matrices (Z row and Z column negated)</item>
     ///   <item>Animation translation tracks (Z negated)</item>
@@ -86,6 +88,7 @@ public static partial class GltfLoaderExtensions
     ///   <item>Node explicit matrix transforms (X row and X column negated)</item>
     ///   <item>Mesh vertex positions and normals (X negated)</item>
     ///   <item>Mesh tangents (X negated, handedness sign W negated)</item>
+    ///   <item>Morph target position, normal and tangent displacements (X negated)</item>
     ///   <item>Index buffers (triangle winding reversed)</item>
     ///   <item>Skin inverse bind matrices (X row and X column negated)</item>
     ///   <item>Animation translation tracks (X negated)</item>
@@ -106,6 +109,7 @@ public static partial class GltfLoaderExtensions
     ///   <item>Node explicit matrix transforms (Y row and Y column negated)</item>
     ///   <item>Mesh vertex positions and normals (Y negated)</item>
     ///   <item>Mesh tangents (Y negated, handedness sign W negated)</item>
+    ///   <item>Morph target position, normal and tangent displacements (Y negated)</item>
     ///   <item>Index buffers (triangle winding reversed)</item>
     ///   <item>Skin inverse bind matrices (Y row and Y column negated)</item>
     ///   <item>Animation translation tracks (Y negated)</item>
@@ -126,6 +130,7 @@ public static partial class GltfLoaderExtensions
     ///   <item>Node explicit matrix transforms (Y and Z rows and columns swapped)</item>
     ///   <item>Mesh vertex positions and normals (Y and Z swapped)</item>
     ///   <item>Mesh tangents (Y and Z swapped, handedness sign W negated)</item>
+    ///   <item>Morph target position, normal and tangent displacements (Y and Z swapped)</item>
     ///   <item>Index buffers (triangle winding reversed)</item>
     ///   <item>Skin inverse bind matrices (Y and Z rows and columns swapped)</item>
     ///   <item>Animation translation tracks (Y and Z swapped)</item>
@@ -146,6 +151,7 @@ public static partial class GltfLoaderExtensions
     ///   <item>Node explicit matrix transforms (X and Y rows and columns swapped)</item>
     ///   <item>Mesh vertex positions and normals (X and Y swapped)</item>
     ///   <item>Mesh tangents (X and Y swapped, handedness sign W negated)</item>
+    ///   <item>Morph target position, normal and tangent displacements (X and Y swapped)</item>
     ///   <item>Index buffers (triangle winding reversed)</item>
     ///   <item>Skin inverse bind matrices (X and Y rows and columns swapped)</item>
     ///   <item>Animation translation tracks (X and Y swapped)</item>
@@ -166,6 +172,7 @@ public static partial class GltfLoaderExtensions
     ///   <item>Node explicit matrix transforms (X and Z rows and columns swapped)</item>
     ///   <item>Mesh vertex positions and normals (X and Z swapped)</item>
     ///   <item>Mesh tangents (X and Z swapped, handedness sign W negated)</item>
+    ///   <item>Morph target position, normal and tangent displacements (X and Z swapped)</item>
     ///   <item>Index buffers (triangle winding reversed)</item>
     ///   <item>Skin inverse bind matrices (X and Z rows and columns swapped)</item>
     ///   <item>Animation translation tracks (X and Z swapped)</item>
@@ -189,6 +196,7 @@ public static partial class GltfLoaderExtensions
     ///   <item>Node TRS translations (multiplied by scale)</item>
     ///   <item>Node explicit matrix transforms (translation row multiplied by scale)</item>
     ///   <item>Mesh vertex positions (multiplied by scale)</item>
+    ///   <item>Morph target position displacements (multiplied by scale)</item>
     ///   <item>Skin inverse bind matrices (translation row multiplied by scale)</item>
     ///   <item>Animation translation tracks (multiplied by scale)</item>
     /// </list>
@@ -222,6 +230,17 @@ public static partial class GltfLoaderExtensions
                 ScaleComponent(span, StrideFloat3, OffY, scale);
                 ScaleComponent(span, StrideFloat3, OffZ, scale);
             }
+
+            // Morph target position displacements are in the same units as the base positions
+            if (prim.Targets != null)
+                foreach (var target in prim.Targets)
+                    if (target.TryGetValue("POSITION", out var targetPosIdx) && AddToSet(processedAccessors, targetPosIdx))
+                    {
+                        var span = loader.GetAccessorBufferSpan(targetPosIdx);
+                        ScaleComponent(span, StrideFloat3, OffX, scale);
+                        ScaleComponent(span, StrideFloat3, OffY, scale);
+                        ScaleComponent(span, StrideFloat3, OffZ, scale);
+                    }
         }
 
         // Skin inverse bind matrices: translation row only
@@ -382,6 +401,14 @@ public static partial class GltfLoaderExtensions
                 NegateComponent(loader.GetAccessorBufferSpan(tangIdx), StrideFloat4, OffW);
             }
 
+            // Morph target displacements: same transform as the base attributes. Target tangents
+            // are VEC3 deltas with no handedness sign
+            if (prim.Targets != null)
+                foreach (var target in prim.Targets)
+                foreach (var attr in (ReadOnlySpan<string>)["POSITION", "NORMAL", "TANGENT"])
+                    if (target.TryGetValue(attr, out var targetIdx) && AddToSet(processedAccessors, targetIdx))
+                        NegateComponent(loader.GetAccessorBufferSpan(targetIdx), StrideFloat3, vecOff);
+
             if (prim.Indices.HasValue && AddToSet(processedAccessors, prim.Indices.Value))
                 FlipTriangleWinding(
                     loader.GetAccessorBufferSpan(prim.Indices.Value),
@@ -495,6 +522,14 @@ public static partial class GltfLoaderExtensions
                 SwapComponents(loader.GetAccessorBufferSpan(tangIdx), StrideFloat4, vecOffA, vecOffB);
                 NegateComponent(loader.GetAccessorBufferSpan(tangIdx), StrideFloat4, OffW);
             }
+
+            // Morph target displacements: same transform as the base attributes. Target tangents
+            // are VEC3 deltas with no handedness sign
+            if (prim.Targets != null)
+                foreach (var target in prim.Targets)
+                foreach (var attr in (ReadOnlySpan<string>)["POSITION", "NORMAL", "TANGENT"])
+                    if (target.TryGetValue(attr, out var targetIdx) && AddToSet(processedAccessors, targetIdx))
+                        SwapComponents(loader.GetAccessorBufferSpan(targetIdx), StrideFloat3, vecOffA, vecOffB);
 
             if (prim.Indices.HasValue && AddToSet(processedAccessors, prim.Indices.Value))
                 FlipTriangleWinding(
