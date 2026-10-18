@@ -846,7 +846,7 @@ public static class GltfUtility
                     if (!image.Uri.StartsWith("data:"))
                     {
                         var sourceFilePath = Path.Combine(inputDirectoryPath, image.Uri);
-                        var fileName = $"{inputFilePath}_image{index}.bin";
+                        var fileName = $"{inputFileName}_image{index}{Path.GetExtension(image.Uri)}";
 
                         if (File.Exists(sourceFilePath))
                         {
