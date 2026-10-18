@@ -101,7 +101,8 @@ public class KtxTexture : ITexture
         if (_commonTextureHandle.ClassId == ClassId.Texture2C)
         {
             var formatSize = _commonTextureHandle.Protected->FormatSize;
-            var blocksWide = Math.Max(1, (_commonTextureHandle.BaseWidth / formatSize.BlockWidth) >> level);
+            var levelWidth = Math.Max(1, _commonTextureHandle.BaseWidth >> level);
+            var blocksWide = (levelWidth + formatSize.BlockWidth - 1) / formatSize.BlockWidth;
             _rowPitch[level] = ByteSize.Of(blocksWide * ((int)formatSize.BlockSizeInBits >> 3));
             return _rowPitch[level];
         }
