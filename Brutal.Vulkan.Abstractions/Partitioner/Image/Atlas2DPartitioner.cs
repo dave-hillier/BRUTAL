@@ -22,7 +22,7 @@ public class Atlas2DPartitioner : IRecycleImageViewPartitioner, ISize2D
     protected int RemainingSpace;
 
     /// <summary>
-    /// Width/height of atlas
+    /// Width of atlas, i.e. the length of each row
     /// </summary>
     public int AtlasSize { get; private set; }
 
@@ -30,7 +30,7 @@ public class Atlas2DPartitioner : IRecycleImageViewPartitioner, ISize2D
     public int Width => AtlasSize;
 
     /// <inheritdoc />
-    public int Height => AtlasSize;
+    public int Height { get; private set; }
 
     /// <summary>
     /// Constructor
@@ -38,8 +38,10 @@ public class Atlas2DPartitioner : IRecycleImageViewPartitioner, ISize2D
     public Atlas2DPartitioner(ImageViewPartitionInfo backingPartition)
     {
         BackingPartition = backingPartition;
-        AtlasSize = backingPartition.Image.Extent.Width;
-        RemainingSpace = AtlasSize;
+        // Size from the backing partition, not the whole image, which may be shared with other owners
+        AtlasSize = backingPartition.Extent.Width;
+        Height = backingPartition.Extent.Height;
+        RemainingSpace = Height;
     }
 
     private static bool AllocateRow(Row row, out int2 offset)
@@ -81,14 +83,14 @@ public class Atlas2DPartitioner : IRecycleImageViewPartitioner, ISize2D
             return true;
         }
 
-        if (size > RemainingSpace)
+        if (size > AtlasSize || size > RemainingSpace)
         {
             x = -1;
             y = -1;
             return false;
         }
 
-        Rows.Add(new Row(AtlasSize - RemainingSpace, size, AtlasSize));
+        Rows.Add(new Row(Height - RemainingSpace, size, AtlasSize));
         RemainingSpace -= size;
 
         if (!AllocateRow(Rows[^1], out var offset2))
@@ -115,8 +117,9 @@ public class Atlas2DPartitioner : IRecycleImageViewPartitioner, ISize2D
     public void Reset(ImageViewPartitionInfo info)
     {
         BackingPartition = info;
-        AtlasSize = info.Image.Extent.Width;
-        RemainingSpace = AtlasSize;
+        AtlasSize = info.Extent.Width;
+        Height = info.Extent.Height;
+        RemainingSpace = Height;
         // Discard the old rows: their positions were carved out of the previous vertical space
         Rows.Clear();
     }
@@ -143,9 +146,9 @@ public class Atlas2DPartitioner : IRecycleImageViewPartitioner, ISize2D
             Extent = createInfo.Extent,
             Offset = new VkOffset3D
             {
-                X = x,
-                Y = y,
-                Z = 0,
+                X = BackingPartition.Offset.X + x,
+                Y = BackingPartition.Offset.Y + y,
+                Z = BackingPartition.Offset.Z,
             },
             ArrayCount = 1,
             ArrayOffset = BackingPartition.ArrayOffset,
@@ -156,6 +159,9 @@ public class Atlas2DPartitioner : IRecycleImageViewPartitioner, ISize2D
 
     public void FreePartition(in ImageViewPartitionInfo inAllocation)
     {
-        Free(inAllocation.Offset.X, inAllocation.Offset.Y);
+        Free(
+            inAllocation.Offset.X - BackingPartition.Offset.X,
+            inAllocation.Offset.Y - BackingPartition.Offset.Y
+        );
     }
 }
