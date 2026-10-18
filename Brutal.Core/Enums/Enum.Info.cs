@@ -28,9 +28,15 @@ public static class Enum<T>
 
         if (Count > 0)
         {
-            // values are already sorted
-            MinValue = Values[0];
-            MaxValue = Values[^1];
+            // values are sorted by unsigned magnitude, so negative values come last: compare signed-aware
+            MinValue = MaxValue = Values[0];
+            foreach (var v in Values)
+            {
+                if (v < MinValue)
+                    MinValue = v;
+                if (v > MaxValue)
+                    MaxValue = v;
+            }
         }
     }
 
