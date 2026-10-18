@@ -291,20 +291,11 @@ public sealed class NativeList : INativeList
         if (index.Bytes < 0 || index.Bytes > Size)
             throw new IndexOutOfRangeException();
 
-        if (Size + 1 <= Capacity)
-        {
-            Mem.Copy(Ptr.Offset(index), Ptr.Offset(index + 1), Size - index);
-            Ptr.Offset(index).Cast<byte>().Value = item;
-        }
-        else
-        {
-            var newPtr = Mem.Alloc(Size + 1);
-            Mem.Copy(Ptr, newPtr, index);
-            newPtr.Offset(index).Cast<byte>().Value = item;
-            Mem.Copy(Ptr.Offset(index), newPtr.Offset(index + 1), Size - index);
-            Mem.Free(Ptr);
-            Ptr = newPtr;
-        }
+        if (Capacity < Size + 1)
+            GrowInternal(Size + 1);
+
+        Mem.Copy(Ptr.Offset(index), Ptr.Offset(index + 1), Size - index);
+        Ptr.Offset(index).Cast<byte>().Value = item;
     }
 
     /// <summary>
@@ -318,20 +309,11 @@ public sealed class NativeList : INativeList
 
         var stride = ByteSize.Of<T>();
 
-        if (Size + stride <= Capacity)
-        {
-            Mem.Copy(Ptr.Offset(index), Ptr.Offset(index + stride), Size - index);
-            Ptr.Offset(index).Cast<T>().Value = item;
-        }
-        else
-        {
-            var newPtr = Mem.Alloc(Size + stride);
-            Mem.Copy(Ptr, newPtr, index);
-            newPtr.Offset(index).Cast<T>().Value = item;
-            Mem.Copy(Ptr.Offset(index), newPtr.Offset(index + stride), Size - index);
-            Mem.Free(Ptr);
-            Ptr = newPtr;
-        }
+        if (Capacity < Size + stride)
+            GrowInternal(Size + stride);
+
+        Mem.Copy(Ptr.Offset(index), Ptr.Offset(index + stride), Size - index);
+        Ptr.Offset(index).Cast<T>().Value = item;
 
         _byteSize += stride;
     }
