@@ -11,6 +11,7 @@ public readonly record struct ImageExtent
     /// of the texture and texel dimensions of one block of the image.
     /// </summary>
     /// <remarks>
+    /// <para />The Texels property dimensions are halved for each mip level and will always be at least 1
     /// <para />The Blocks property dimensions are rounded-up from Texels / blockTexelDimensions and will always be at least 1
     /// </remarks>
     /// <param name="level0ImageTexelDimensions">Dimensions of the largest mip level, in whole texels.</param>
@@ -21,9 +22,9 @@ public readonly record struct ImageExtent
         Level = mipLevel;
 
         Texels = new TexelCount3(
-            level0ImageTexelDimensions.X >> mipLevel,
-            level0ImageTexelDimensions.Y >> mipLevel,
-            level0ImageTexelDimensions.Z >> mipLevel
+            Math.Max(1, level0ImageTexelDimensions.X >> mipLevel),
+            Math.Max(1, level0ImageTexelDimensions.Y >> mipLevel),
+            Math.Max(1, level0ImageTexelDimensions.Z >> mipLevel)
         );
         Blocks = InBlocks(Texels, blockTexelDimensions);
     }
