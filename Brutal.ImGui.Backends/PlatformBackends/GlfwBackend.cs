@@ -69,7 +69,8 @@ public partial class GlfwBackend : IPlatformBackend
         _context = ImGui.GetCurrentContext();
 
         var backendName = $"Brutal.ImGui.GlfwBackend - GlfwVersion: {Glfw.VersionString}";
-        _backendName = new NativeList<byte>(Utf8.GetByteCount(backendName) + 1);
+        _backendName = [];
+        _backendName.Count = Utf8.GetByteCount(backendName) + 1; // Count zero-fills, so the last byte is the null terminator
         Utf8.FromUtf16(backendName, _backendName.AsSpan(), out _, out _);
 
         var io = ImGui.GetIO();
