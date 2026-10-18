@@ -28,6 +28,30 @@ public class FreeListIndexPoolTests
     }
 
     [Fact]
+    public void Removing_an_already_free_index_that_is_not_the_head_of_the_free_list_does_not_hand_out_an_index_twice()
+    {
+        var pool = new FreeListIndexPool();
+        var a = pool.Add();
+        var b = pool.Add();
+        pool.Remove(a);
+        pool.Remove(b); // b is now the head of the free list, a sits behind it
+
+        // Correct behaviour: a double remove either throws or is a no-op.
+        try
+        {
+            pool.Remove(a);
+        }
+        catch (Exception)
+        {
+            // Throwing on double remove is acceptable.
+        }
+
+        var handedOut = new[] { pool.Add(), pool.Add(), pool.Add() };
+
+        Assert.Equal(handedOut.Length, handedOut.Distinct().Count());
+    }
+
+    [Fact]
     public void IsEmpty_is_false_for_an_occupied_slot_and_true_after_it_is_removed()
     {
         var pool = new FreeListIndexPool();
