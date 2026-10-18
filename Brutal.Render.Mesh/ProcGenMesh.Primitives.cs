@@ -18,9 +18,15 @@ public static partial class ProcGenMeshLibrary
     {
         var dot = float3.Dot(normal, GlobalUp);
         if (MathF.Abs(dot) > 0.9999f)
-            right = GlobalRight * MathF.Sign(dot);
+        {
+            // Near GlobalUp the cross product is unreliable, so use GlobalRight with its component along normal removed
+            var globalRight = GlobalRight * MathF.Sign(dot);
+            right = float3.Normalize(globalRight - normal * float3.Dot(globalRight, normal));
+        }
         else
+        {
             right = float3.NormalizeOrZero(float3.Cross(normal, GlobalUp));
+        }
         up = float3.Cross(right, normal);
     }
 

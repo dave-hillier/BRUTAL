@@ -16,4 +16,19 @@ public class MeshTests
         // Same behaviour as EnsureIndexBuffer, which disposes through SetIndexBuffer
         Assert.True(original.IsNull(), "the replaced vertex list still owns its native memory (leaked)");
     }
+
+    [Fact]
+    public void SetVerticesFromData_disposes_the_list_it_replaces()
+    {
+        using var mesh = new Mesh<int>();
+        mesh.SetVerticesFromData<int, float>(0, [1f, 2f, 3f]);
+        var original = mesh.GetVertexList(0);
+
+        mesh.SetVerticesFromData<int, float>(0, [4f, 5f, 6f]);
+        var replacement = mesh.GetVertexList(0);
+
+        Assert.NotSame(original, replacement);
+        Assert.True(original.IsNull(), "the replaced vertex list still owns its native memory (leaked)");
+        Assert.Equal([4f, 5f, 6f], replacement.ToSpan<float>().ToArray());
+    }
 }

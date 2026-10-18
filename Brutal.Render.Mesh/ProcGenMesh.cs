@@ -476,15 +476,10 @@ public static partial class ProcGenMeshLibrary
         for (var i = 0; i < count; i++)
         {
             var normal = normals[i];
-            if (float.Abs(normal.Y) >= 1.0f)
-            {
-                tangents[i] = new float4(1.0f, 0.0f, 0.0f, 1.0f);
-            }
-            else
-            {
-                var biTangent = float3.Cross(normal, GlobalUp);
-                tangents[i] = new float4(float3.Normalize(float3.Cross(normal, biTangent)), 1.0f);
-            }
+            var biTangent = float3.Cross(normal, GlobalUp);
+            var tangent = float3.NormalizeOrZero(float3.Cross(normal, biTangent));
+            // A normal parallel to GlobalUp, of any length, has no tangent from it, so fall back to the X axis
+            tangents[i] = tangent == float3.Zero ? new float4(1.0f, 0.0f, 0.0f, 1.0f) : new float4(tangent, 1.0f);
         }
     }
 
