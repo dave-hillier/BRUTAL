@@ -127,14 +127,15 @@ public static partial class ProcGenMeshLibrary
         var buffer = stackalloc T[vectorLength];
 
         var vCount = inList.Length / vectorLength;
-        var ptr = inList.AsPointer();
+        var inPtr = inList.AsPointer();
+        var outPtr = outList.AsPointer();
         for (var i = 0; i < vCount; i++)
         {
             var vI = i * vectorLength;
             for (var ii = 0; ii < vectorLength; ii++)
-                buffer[ii] = ptr[vI + offsets[ii]];
+                buffer[ii] = inPtr[vI + offsets[ii]];
             for (var ii = 0; ii < vectorLength; ii++)
-                ptr[vI + ii] = buffer[ii];
+                outPtr[vI + ii] = buffer[ii];
         }
     }
 
@@ -306,13 +307,31 @@ public static partial class ProcGenMeshLibrary
     public static unsafe void AddQuad<T>(NativeStrideList positions, NativeStrideList indices, T p0, T p1, T p2, T p3)
         where T : unmanaged
     {
-        var vCount = positions.Count;
+        int vCount = positions.Count;
         var ptr = AllocateAtEnd<T>(positions, 4);
         ptr[0] = p0;
         ptr[1] = p1;
         ptr[2] = p2;
         ptr[3] = p3;
-        AddGridIndices(indices, vCount, 2, 2);
+
+        // Same triangles as the non-indexed AddQuad: (p0, p1, p2) and (p0, p2, p3)
+        ReadOnlySpan<int> quadIndices = [0, 1, 2, 0, 2, 3];
+        if (indices.Stride == ByteSize.Of<ushort>())
+        {
+            var iPtr = AllocateAtEnd<ushort>(indices, 6);
+            for (var i = 0; i < 6; ++i)
+                iPtr[i] = (ushort)(vCount + quadIndices[i]);
+        }
+        else if (indices.Stride == ByteSize.Of<uint>())
+        {
+            var iPtr = AllocateAtEnd<uint>(indices, 6);
+            for (var i = 0; i < 6; ++i)
+                iPtr[i] = (uint)(vCount + quadIndices[i]);
+        }
+        else
+        {
+            throw new Exception($"Unsupported index stride: {indices.Stride}");
+        }
     }
 
     /// <summary>
@@ -457,7 +476,7 @@ public static partial class ProcGenMeshLibrary
         for (var i = 0; i < count; i++)
         {
             var normal = normals[i];
-            if (normal.Y >= 1.0f)
+            if (float.Abs(normal.Y) >= 1.0f)
             {
                 tangents[i] = new float4(1.0f, 0.0f, 0.0f, 1.0f);
             }

@@ -234,8 +234,10 @@ public static partial class MeshExtensions
         {
             if (stride != nativeList.Stride)
             {
+                var oldList = nativeList;
                 nativeList = new NativeStrideList(stride, nativeList.Capacity);
                 mesh.SetVertexList(key, nativeList);
+                oldList.Dispose();
             }
         }
         else
