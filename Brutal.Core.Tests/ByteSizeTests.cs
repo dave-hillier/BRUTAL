@@ -91,12 +91,47 @@ public unsafe class ByteSizeTests
     }
 
     [Theory]
-    [InlineData(1048575UL)] // 1 MiB - 1
-    [InlineData(1099511627775UL)] // 1 TiB - 1
-    public void ByteSize_ToString_never_shows_1024_of_a_unit(ulong bytes)
+    [InlineData(0UL, "0 B")]
+    [InlineData(1023UL, "1023 B")]
+    [InlineData(1024UL, "1 KB")]
+    [InlineData(1048570UL, "1023.99 KB")] // 1023.994 KB stays in KB
+    [InlineData(1048571UL, "1 MB")] // 1023.995 KB rounds to 1024 KB, so promotes
+    [InlineData(1048575UL, "1 MB")] // 1 MiB - 1
+    [InlineData(1048576UL, "1 MB")]
+    [InlineData(1099511627775UL, "1 TB")] // 1 TiB - 1
+    [InlineData(ulong.MaxValue, "16 EB")]
+    public void ByteSize_ToString_never_shows_1024_of_a_unit(ulong bytes, string expected)
     {
-        var s = new ByteSize((nuint)bytes).ToString();
-        Assert.DoesNotContain("1024 ", s);
+        Assert.Equal(expected, new ByteSize((nuint)bytes).ToString());
+    }
+
+    // Exact binary fractions land on the midpoint; they round away from zero, as "0.##" always did
+    [Theory]
+    [InlineData(1152UL, "1.13 KB")] // 1.125
+    [InlineData(1664UL, "1.63 KB")] // 1.625
+    [InlineData(2176UL, "2.13 KB")] // 2.125
+    [InlineData(1179648UL, "1.13 MB")] // 1.125
+    public void ByteSize_ToString_rounds_midpoints_away_from_zero(ulong bytes, string expected)
+    {
+        Assert.Equal(expected, new ByteSize((nuint)bytes).ToString());
+        Assert.Equal(expected, new ByteSize64(bytes).ToString());
+        Assert.Equal(expected, new ByteSize32((uint)bytes).ToString());
+    }
+
+    [Theory]
+    [InlineData(1048575U, "1 MB")]
+    [InlineData(uint.MaxValue, "4 GB")]
+    public void ByteSize32_ToString_promotes_unit_like_ByteSize(uint bytes, string expected)
+    {
+        Assert.Equal(expected, new ByteSize32(bytes).ToString());
+    }
+
+    [Theory]
+    [InlineData(1048575UL, "1 MB")]
+    [InlineData(1099511627775UL, "1 TB")]
+    public void ByteSize64_ToString_promotes_unit_like_ByteSize(ulong bytes, string expected)
+    {
+        Assert.Equal(expected, new ByteSize64(bytes).ToString());
     }
 
     // Asks the C allocator behind NativeMemory how many bytes a block really holds.
