@@ -25,8 +25,7 @@ public partial class LString
         _replacements = new List<Replacement>(MaxReplacementCount);
         _templateString = templateString;
         _replacementPattern = replacementPattern ?? DefaultOptions.ReplacementPattern();
-        _localizedString = templateString;
-        BuildReplacements(true);
+        BuildReplacements(templateString, true);
     }
 
     /// <inheritdoc cref="LString(LStringId,string,System.Text.RegularExpressions.Regex?)"/>
@@ -82,31 +81,37 @@ public partial class LString
     [MemberNotNull(nameof(_localizedString))]
     private void Update(string localizedString)
     {
-        _localizedString =
-            localizedString ?? throw new ArgumentNullException(nameof(localizedString));
-        BuildReplacements(false);
+        BuildReplacements(
+            localizedString ?? throw new ArgumentNullException(nameof(localizedString)),
+            false
+        );
     }
 
-    private void BuildReplacements(bool isInitialBuild)
+    [MemberNotNull(nameof(_localizedString))]
+    private void BuildReplacements(string localizedString, bool isInitialBuild)
     {
-        _literalCharCount = 0;
-        _endLiteralStart = 0;
-        var matches = _replacementPattern.EnumerateMatches(_localizedString);
+        // Build the new state in locals and only assign it once localizedString has been validated,
+        // so a rejected localizedString leaves this LString unchanged.
+        Span<Replacement> replacements = isInitialBuild
+            ? default
+            : stackalloc Replacement[_replacements.Count];
+        var literalCharCount = 0;
+        var matches = _replacementPattern.EnumerateMatches(localizedString);
         var nextPossibleLiteralStart = 0;
         ushort replacementCount = 0;
         foreach (var match in matches)
         {
             if (!isInitialBuild && replacementCount >= _replacements.Count)
-                throw IncorrectReplacementCountException(Template, _localizedString);
+                throw IncorrectReplacementCountException(Template, localizedString);
 
             var matchPos = match.Index;
             var templateReplacementIndex = isInitialBuild
                 ? replacementCount
                 : GetTemplateStringReplacementIndex(
-                    _localizedString.AsSpan()[matchPos..(matchPos + match.Length)]
+                    localizedString.AsSpan()[matchPos..(matchPos + match.Length)]
                 );
 
-            _literalCharCount += matchPos - nextPossibleLiteralStart;
+            literalCharCount += matchPos - nextPossibleLiteralStart;
             var replacementRange = new Range(matchPos, matchPos + match.Length);
             var literalRange =
                 matchPos > nextPossibleLiteralStart
@@ -123,7 +128,7 @@ public partial class LString
                     }
                 );
             else
-                _replacements[replacementCount] = _replacements[replacementCount] with
+                replacements[replacementCount] = _replacements[replacementCount] with
                 {
                     LiteralRange = literalRange,
                     TemplateReplacementIndex = templateReplacementIndex,
@@ -134,10 +139,14 @@ public partial class LString
         }
 
         if (!isInitialBuild && replacementCount != _replacements.Count)
-            throw IncorrectReplacementCountException(Template, _localizedString);
+            throw IncorrectReplacementCountException(Template, localizedString);
 
+        if (!isInitialBuild)
+            replacements.CopyTo(CollectionsMarshal.AsSpan(_replacements));
+        _localizedString = localizedString;
+        _literalCharCount = literalCharCount;
         _endLiteralStart =
-            nextPossibleLiteralStart == 0 ? _localizedString.Length : nextPossibleLiteralStart;
+            nextPossibleLiteralStart == 0 ? localizedString.Length : nextPossibleLiteralStart;
     }
 
     private ushort GetTemplateStringReplacementIndex(ReadOnlySpan<char> replacementText)
