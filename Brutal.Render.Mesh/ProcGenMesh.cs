@@ -306,13 +306,31 @@ public static partial class ProcGenMeshLibrary
     public static unsafe void AddQuad<T>(NativeStrideList positions, NativeStrideList indices, T p0, T p1, T p2, T p3)
         where T : unmanaged
     {
-        var vCount = positions.Count;
+        int vCount = positions.Count;
         var ptr = AllocateAtEnd<T>(positions, 4);
         ptr[0] = p0;
         ptr[1] = p1;
         ptr[2] = p2;
         ptr[3] = p3;
-        AddGridIndices(indices, vCount, 2, 2);
+
+        // Same triangles as the non-indexed AddQuad: (p0, p1, p2) and (p0, p2, p3)
+        ReadOnlySpan<int> quadIndices = [0, 1, 2, 0, 2, 3];
+        if (indices.Stride == ByteSize.Of<ushort>())
+        {
+            var iPtr = AllocateAtEnd<ushort>(indices, 6);
+            for (var i = 0; i < 6; ++i)
+                iPtr[i] = (ushort)(vCount + quadIndices[i]);
+        }
+        else if (indices.Stride == ByteSize.Of<uint>())
+        {
+            var iPtr = AllocateAtEnd<uint>(indices, 6);
+            for (var i = 0; i < 6; ++i)
+                iPtr[i] = (uint)(vCount + quadIndices[i]);
+        }
+        else
+        {
+            throw new Exception($"Unsupported index stride: {indices.Stride}");
+        }
     }
 
     /// <summary>
