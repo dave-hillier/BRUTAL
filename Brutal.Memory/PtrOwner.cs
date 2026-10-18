@@ -111,8 +111,7 @@ public class PtrOwner<TValueType> : IDisposable, INullable
     /// </remarks>
     public void Reset(Ptr<TValueType> newValue = default)
     {
-        Release();
-        Swap(newValue);
+        Mem.Free(Swap(newValue));
     }
 
     /// <summary>
