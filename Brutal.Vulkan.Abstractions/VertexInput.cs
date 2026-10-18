@@ -745,7 +745,8 @@ public class VertexInput
         // Stride with default behaviour
         public readonly ByteSize Stride = inStride;
 
-        public ByteSize GetBehaviourStride(Behavior mode) => mode == Behavior.None ? Stride : ByteSize.Of<float>();
+        // Normalized and scaled formats change how the shader reads the data, not its size in the buffer
+        public ByteSize GetBehaviourStride(Behavior mode) => Stride;
 
         public ByteSize GetTotalSize(Behavior mode) => GetBehaviourStride(mode) * Num;
 
