@@ -11,11 +11,6 @@ public static partial class GltfLoaderExtensions
     private const int OffZ = 8;
     private const int OffW = 12;
 
-    // Per-element strides for common GLTF accessor types
-    private const int StrideFloat3 = 12; // vec3
-    private const int StrideFloat4 = 16; // vec4 / quaternion
-    private const int StrideMatrix = 64; // mat4
-
     // Byte offsets of each Mij within a row-major float4x4 (System.Numerics layout)
     //   Row 1:  M11= 0  M12= 4  M13= 8  M14=12
     //   Row 2:  M21=16  M22=20  M23=24  M24=28
@@ -217,10 +212,10 @@ public static partial class GltfLoaderExtensions
 
             if (prim.Attributes.TryGetValue("POSITION", out var posIdx) && AddToSet(processedAccessors, posIdx))
             {
-                var span = loader.GetAccessorBufferSpan(posIdx);
-                ScaleComponent(span, StrideFloat3, OffX, scale);
-                ScaleComponent(span, StrideFloat3, OffY, scale);
-                ScaleComponent(span, StrideFloat3, OffZ, scale);
+                var span = GetFloatAccessorSpan(loader, posIdx, out var stride);
+                ScaleComponent(span, stride, OffX, scale);
+                ScaleComponent(span, stride, OffY, scale);
+                ScaleComponent(span, stride, OffZ, scale);
             }
         }
 
@@ -228,7 +223,10 @@ public static partial class GltfLoaderExtensions
         if (gltf.Skins != null)
             foreach (var skin in gltf.Skins)
                 if (skin.InverseBindMatrices.HasValue && AddToSet(processedAccessors, skin.InverseBindMatrices.Value))
-                    ScaleMatrixTranslationArray(loader.GetAccessorBufferSpan(skin.InverseBindMatrices.Value), scale);
+                {
+                    var span = GetFloatAccessorSpan(loader, skin.InverseBindMatrices.Value, out var stride);
+                    ScaleMatrixTranslationArray(span, stride, scale);
+                }
 
         // Animation translation tracks
         if (gltf.Animations != null)
@@ -243,10 +241,10 @@ public static partial class GltfLoaderExtensions
                     && AddToSet(processedAccessors, sampler.Output)
                 )
                 {
-                    var span = loader.GetAccessorBufferSpan(sampler.Output);
-                    ScaleComponent(span, StrideFloat3, OffX, scale);
-                    ScaleComponent(span, StrideFloat3, OffY, scale);
-                    ScaleComponent(span, StrideFloat3, OffZ, scale);
+                    var span = GetFloatAccessorSpan(loader, sampler.Output, out var stride);
+                    ScaleComponent(span, stride, OffX, scale);
+                    ScaleComponent(span, stride, OffY, scale);
+                    ScaleComponent(span, stride, OffZ, scale);
                 }
             }
 
@@ -254,6 +252,23 @@ public static partial class GltfLoaderExtensions
     }
 
     #region Private helpers
+
+    /// <summary>
+    /// Gets the raw data of a float accessor along with the byte distance between consecutive
+    /// elements, which is the bufferView's byteStride when vertex attributes are interleaved.
+    /// The helpers below rewrite components in place as floats, so other component types are rejected.
+    /// </summary>
+    private static ReadOnlySpan<byte> GetFloatAccessorSpan(GltfLoader loader, int accessorIndex, out int stride)
+    {
+        var accessor = loader.GltfJson.Accessors[accessorIndex];
+        if (accessor.ComponentType != Accessor.ComponentTypeEnum.Float)
+            throw new NotSupportedException(
+                $"Accessor {accessorIndex} has component type {accessor.ComponentType}; only float accessors can be transformed"
+            );
+        var span = loader.GetAccessorBufferSpan(accessorIndex);
+        stride = loader.GltfJson.BufferViews[accessor.BufferView!.Value].ByteStride ?? (int)accessor.ElementSize();
+        return span;
+    }
 
     /// <summary>
     /// Iterates over a raw accessor buffer treating it as an array of fixed-size elements and
@@ -329,11 +344,11 @@ public static partial class GltfLoaderExtensions
         return m;
     }
 
-    private static void ScaleMatrixTranslationArray(ReadOnlySpan<byte> buffer, float scale)
+    private static void ScaleMatrixTranslationArray(ReadOnlySpan<byte> buffer, int elementByteStride, float scale)
     {
-        ScaleComponent(buffer, StrideMatrix, M41, scale);
-        ScaleComponent(buffer, StrideMatrix, M42, scale);
-        ScaleComponent(buffer, StrideMatrix, M43, scale);
+        ScaleComponent(buffer, elementByteStride, M41, scale);
+        ScaleComponent(buffer, elementByteStride, M42, scale);
+        ScaleComponent(buffer, elementByteStride, M43, scale);
     }
 
     // Shared implementation for FlipXAxis / FlipYAxis / FlipZAxis.
@@ -369,17 +384,24 @@ public static partial class GltfLoaderExtensions
                 continue;
 
             if (prim.Attributes.TryGetValue("POSITION", out var posIdx) && AddToSet(processedAccessors, posIdx))
-                NegateComponent(loader.GetAccessorBufferSpan(posIdx), StrideFloat3, vecOff);
+            {
+                var span = GetFloatAccessorSpan(loader, posIdx, out var stride);
+                NegateComponent(span, stride, vecOff);
+            }
 
             if (prim.Attributes.TryGetValue("NORMAL", out var normIdx) && AddToSet(processedAccessors, normIdx))
-                NegateComponent(loader.GetAccessorBufferSpan(normIdx), StrideFloat3, vecOff);
+            {
+                var span = GetFloatAccessorSpan(loader, normIdx, out var stride);
+                NegateComponent(span, stride, vecOff);
+            }
 
             if (prim.Attributes.TryGetValue("TANGENT", out var tangIdx) && AddToSet(processedAccessors, tangIdx))
             {
                 // Negate the axis component and the handedness sign W: reflecting one axis flips
                 // the tangent frame orientation
-                NegateComponent(loader.GetAccessorBufferSpan(tangIdx), StrideFloat4, vecOff);
-                NegateComponent(loader.GetAccessorBufferSpan(tangIdx), StrideFloat4, OffW);
+                var span = GetFloatAccessorSpan(loader, tangIdx, out var stride);
+                NegateComponent(span, stride, vecOff);
+                NegateComponent(span, stride, OffW);
             }
 
             if (prim.Indices.HasValue && AddToSet(processedAccessors, prim.Indices.Value))
@@ -393,7 +415,10 @@ public static partial class GltfLoaderExtensions
         if (gltf.Skins != null)
             foreach (var skin in gltf.Skins)
                 if (skin.InverseBindMatrices.HasValue && AddToSet(processedAccessors, skin.InverseBindMatrices.Value))
-                    NegateMatrixElementsArray(loader.GetAccessorBufferSpan(skin.InverseBindMatrices.Value), matOffsets);
+                {
+                    var span = GetFloatAccessorSpan(loader, skin.InverseBindMatrices.Value, out var stride);
+                    NegateMatrixElementsArray(span, stride, matOffsets);
+                }
 
         // Animation translation and rotation tracks
         if (gltf.Animations != null)
@@ -407,14 +432,18 @@ public static partial class GltfLoaderExtensions
                     channel.Target.Path == AnimationChannelTarget.PathEnum.Translation
                     && AddToSet(processedAccessors, sampler.Output)
                 )
-                    NegateComponent(loader.GetAccessorBufferSpan(sampler.Output), StrideFloat3, vecOff);
+                {
+                    var span = GetFloatAccessorSpan(loader, sampler.Output, out var stride);
+                    NegateComponent(span, stride, vecOff);
+                }
                 else if (
                     channel.Target.Path == AnimationChannelTarget.PathEnum.Rotation
                     && AddToSet(processedAccessors, sampler.Output)
                 )
                 {
-                    NegateComponent(loader.GetAccessorBufferSpan(sampler.Output), StrideFloat4, quatOffA);
-                    NegateComponent(loader.GetAccessorBufferSpan(sampler.Output), StrideFloat4, quatOffB);
+                    var span = GetFloatAccessorSpan(loader, sampler.Output, out var stride);
+                    NegateComponent(span, stride, quatOffA);
+                    NegateComponent(span, stride, quatOffB);
                 }
             }
 
@@ -450,10 +479,14 @@ public static partial class GltfLoaderExtensions
         return m;
     }
 
-    private static void NegateMatrixElementsArray(ReadOnlySpan<byte> buffer, ReadOnlySpan<int> byteOffsets)
+    private static void NegateMatrixElementsArray(
+        ReadOnlySpan<byte> buffer,
+        int elementByteStride,
+        ReadOnlySpan<int> byteOffsets
+    )
     {
         foreach (var off in byteOffsets)
-            NegateComponent(buffer, StrideMatrix, off);
+            NegateComponent(buffer, elementByteStride, off);
     }
 
     // Shared implementation for SwapXYAxes / SwapXZAxes / SwapYZAxes.
@@ -483,17 +516,24 @@ public static partial class GltfLoaderExtensions
                 continue;
 
             if (prim.Attributes.TryGetValue("POSITION", out var posIdx) && AddToSet(processedAccessors, posIdx))
-                SwapComponents(loader.GetAccessorBufferSpan(posIdx), StrideFloat3, vecOffA, vecOffB);
+            {
+                var span = GetFloatAccessorSpan(loader, posIdx, out var stride);
+                SwapComponents(span, stride, vecOffA, vecOffB);
+            }
 
             if (prim.Attributes.TryGetValue("NORMAL", out var normIdx) && AddToSet(processedAccessors, normIdx))
-                SwapComponents(loader.GetAccessorBufferSpan(normIdx), StrideFloat3, vecOffA, vecOffB);
+            {
+                var span = GetFloatAccessorSpan(loader, normIdx, out var stride);
+                SwapComponents(span, stride, vecOffA, vecOffB);
+            }
 
             if (prim.Attributes.TryGetValue("TANGENT", out var tangIdx) && AddToSet(processedAccessors, tangIdx))
             {
                 // Swap the two axis components; negate handedness sign W because any axis swap
                 // is a reflection (det = -1), which flips the tangent frame orientation
-                SwapComponents(loader.GetAccessorBufferSpan(tangIdx), StrideFloat4, vecOffA, vecOffB);
-                NegateComponent(loader.GetAccessorBufferSpan(tangIdx), StrideFloat4, OffW);
+                var span = GetFloatAccessorSpan(loader, tangIdx, out var stride);
+                SwapComponents(span, stride, vecOffA, vecOffB);
+                NegateComponent(span, stride, OffW);
             }
 
             if (prim.Indices.HasValue && AddToSet(processedAccessors, prim.Indices.Value))
@@ -507,7 +547,10 @@ public static partial class GltfLoaderExtensions
         if (gltf.Skins != null)
             foreach (var skin in gltf.Skins)
                 if (skin.InverseBindMatrices.HasValue && AddToSet(processedAccessors, skin.InverseBindMatrices.Value))
-                    SwapMatrixElementsArray(loader.GetAccessorBufferSpan(skin.InverseBindMatrices.Value), matSwapPairs);
+                {
+                    var span = GetFloatAccessorSpan(loader, skin.InverseBindMatrices.Value, out var stride);
+                    SwapMatrixElementsArray(span, stride, matSwapPairs);
+                }
 
         // Animation translation and rotation tracks
         if (gltf.Animations != null)
@@ -521,7 +564,10 @@ public static partial class GltfLoaderExtensions
                     channel.Target.Path == AnimationChannelTarget.PathEnum.Translation
                     && AddToSet(processedAccessors, sampler.Output)
                 )
-                    SwapComponents(loader.GetAccessorBufferSpan(sampler.Output), StrideFloat3, vecOffA, vecOffB);
+                {
+                    var span = GetFloatAccessorSpan(loader, sampler.Output, out var stride);
+                    SwapComponents(span, stride, vecOffA, vecOffB);
+                }
                 else if (
                     channel.Target.Path == AnimationChannelTarget.PathEnum.Rotation
                     && AddToSet(processedAccessors, sampler.Output)
@@ -529,8 +575,9 @@ public static partial class GltfLoaderExtensions
                 {
                     // GLTF stores quaternions as float4(X, Y, Z, W): swap the two imaginary
                     // components and negate W (same reflection logic as the tangent handedness)
-                    SwapComponents(loader.GetAccessorBufferSpan(sampler.Output), StrideFloat4, vecOffA, vecOffB);
-                    NegateComponent(loader.GetAccessorBufferSpan(sampler.Output), StrideFloat4, OffW);
+                    var span = GetFloatAccessorSpan(loader, sampler.Output, out var stride);
+                    SwapComponents(span, stride, vecOffA, vecOffB);
+                    NegateComponent(span, stride, OffW);
                 }
             }
 
@@ -571,10 +618,14 @@ public static partial class GltfLoaderExtensions
         return m;
     }
 
-    private static void SwapMatrixElementsArray(ReadOnlySpan<byte> buffer, ReadOnlySpan<int> swapPairs)
+    private static void SwapMatrixElementsArray(
+        ReadOnlySpan<byte> buffer,
+        int elementByteStride,
+        ReadOnlySpan<int> swapPairs
+    )
     {
         for (var i = 0; i < swapPairs.Length; i += 2)
-            SwapComponents(buffer, StrideMatrix, swapPairs[i], swapPairs[i + 1]);
+            SwapComponents(buffer, elementByteStride, swapPairs[i], swapPairs[i + 1]);
     }
 
     /// <summary>Reverse triangle winding by swapping the second and third index of every triple.</summary>
