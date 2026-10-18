@@ -1,4 +1,5 @@
 using System.Buffers;
+using Brutal.Collections.Experimental;
 using Path16 = System.IO.Path;
 
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
@@ -86,13 +87,15 @@ public static partial class Utf8
                 return default;
 
             var charCount = GetCharCount(path);
-            Span<Char16> chars = stackalloc Char16[charCount];
-            if (ToUtf16(path, chars, out _, out _) != OperationStatus.Done)
-                throw new ArgumentException("Invalid UTF-8 path", nameof(path));
+            using (new ScratchSpan<Char16>(charCount, stackalloc Char16[256], out var chars))
+            {
+                if (ToUtf16(path, chars, out _, out _, replaceInvalidSequences: false) != OperationStatus.Done)
+                    throw new ArgumentException("Invalid UTF-8 path", nameof(path));
 
-            var directoryName = Path16.GetDirectoryName(chars);
+                var directoryName = Path16.GetDirectoryName(chars);
 
-            return path[..GetByteCount(directoryName)];
+                return path[..GetByteCount(directoryName)];
+            }
         }
 
         /// <inheritdoc cref="Path16.GetFileName(ReadOnlySpan{Char16})"/>
@@ -103,12 +106,14 @@ public static partial class Utf8
                 return default;
 
             var charCount = GetCharCount(path);
-            Span<Char16> chars = stackalloc Char16[charCount];
-            if (ToUtf16(path, chars, out _, out _) != OperationStatus.Done)
-                throw new ArgumentException("Invalid UTF-8 path", nameof(path));
+            using (new ScratchSpan<Char16>(charCount, stackalloc Char16[256], out var chars))
+            {
+                if (ToUtf16(path, chars, out _, out _, replaceInvalidSequences: false) != OperationStatus.Done)
+                    throw new ArgumentException("Invalid UTF-8 path", nameof(path));
 
-            var fileName = Path16.GetFileName(chars);
-            return path[^GetByteCount(fileName)..];
+                var fileName = Path16.GetFileName(chars);
+                return path[^GetByteCount(fileName)..];
+            }
         }
 
         /// <inheritdoc cref="Path16.GetFileNameWithoutExtension(ReadOnlySpan{Char16})"/>
@@ -240,11 +245,13 @@ public static partial class Utf8
             if (charCount == 0)
                 return false;
 
-            Span<Char16> chars = stackalloc Char16[charCount];
-            if (ToUtf16(path, chars, out _, out _) != OperationStatus.Done)
-                throw new ArgumentException("Invalid UTF-8 path", nameof(path));
+            using (new ScratchSpan<Char16>(charCount, stackalloc Char16[256], out var chars))
+            {
+                if (ToUtf16(path, chars, out _, out _, replaceInvalidSequences: false) != OperationStatus.Done)
+                    throw new ArgumentException("Invalid UTF-8 path", nameof(path));
 
-            return Path16.IsPathFullyQualified(chars);
+                return Path16.IsPathFullyQualified(chars);
+            }
         }
 
         /// <inheritdoc cref="Path16.Combine(String16, String16)"/>
