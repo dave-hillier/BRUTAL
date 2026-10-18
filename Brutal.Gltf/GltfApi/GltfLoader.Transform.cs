@@ -382,7 +382,12 @@ public static partial class GltfLoaderExtensions
                 NegateComponent(loader.GetAccessorBufferSpan(tangIdx), StrideFloat4, OffW);
             }
 
-            if (prim.Indices.HasValue && AddToSet(processedAccessors, prim.Indices.Value))
+            // Only triangle lists have a winding that the index order encodes
+            if (
+                prim.Mode == MeshPrimitive.ModeEnum.Triangles
+                && prim.Indices.HasValue
+                && AddToSet(processedAccessors, prim.Indices.Value)
+            )
                 FlipTriangleWinding(
                     loader.GetAccessorBufferSpan(prim.Indices.Value),
                     gltf.Accessors[prim.Indices.Value].ComponentType
@@ -496,7 +501,12 @@ public static partial class GltfLoaderExtensions
                 NegateComponent(loader.GetAccessorBufferSpan(tangIdx), StrideFloat4, OffW);
             }
 
-            if (prim.Indices.HasValue && AddToSet(processedAccessors, prim.Indices.Value))
+            // Only triangle lists have a winding that the index order encodes
+            if (
+                prim.Mode == MeshPrimitive.ModeEnum.Triangles
+                && prim.Indices.HasValue
+                && AddToSet(processedAccessors, prim.Indices.Value)
+            )
                 FlipTriangleWinding(
                     loader.GetAccessorBufferSpan(prim.Indices.Value),
                     gltf.Accessors[prim.Indices.Value].ComponentType
