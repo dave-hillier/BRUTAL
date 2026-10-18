@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="Brutal.Numerics.Tests/Brutal.Numerics.Tests.csproj" />
+  <Project Path="Brutal.Numerics/Brutal.Numerics.csproj" />
+</Solution>
