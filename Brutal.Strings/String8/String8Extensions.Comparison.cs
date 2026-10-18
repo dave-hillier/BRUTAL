@@ -14,8 +14,6 @@ public static partial class String8Extensions
             int countB
         )
         {
-            Debug.Assert(!strA.IsEmpty);
-            Debug.Assert(!strB.IsEmpty);
             Debug.Assert(indexA >= 0 && indexB >= 0);
             Debug.Assert(countA >= 0 && countB >= 0);
             Debug.Assert(indexA + countA <= strA.Length && indexB + countB <= strB.Length);
@@ -35,17 +33,6 @@ public static partial class String8Extensions
     public static int Compare<TString8>(this TString8 strA, String8View strB)
         where TString8 : IString8, allows ref struct
     {
-        // They can't both be null at this point.
-        if (strA.IsEmpty)
-        {
-            return -1;
-        }
-
-        if (strB.IsEmpty)
-        {
-            return 1;
-        }
-
         return Helpers.CompareOrdinalHelper(strA.Chars, strB);
     }
 
@@ -53,11 +40,6 @@ public static partial class String8Extensions
     public static int Compare<TString8>(this TString8 strA, int indexA, String8View strB, int indexB, int length)
         where TString8 : IString8, allows ref struct
     {
-        if (strA.IsEmpty || strB.IsEmpty)
-        {
-            return strA.IsEmpty ? -1 : 1;
-        }
-
         ArgumentOutOfRangeException.ThrowIfNegative(length);
 
         if (indexA < 0 || indexB < 0)
