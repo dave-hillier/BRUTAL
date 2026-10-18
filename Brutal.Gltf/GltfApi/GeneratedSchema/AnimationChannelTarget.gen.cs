@@ -126,12 +126,16 @@ namespace Brutal.GltfApi {
         /// </summary>
         public enum PathEnum {
             
+            [System.Text.Json.Serialization.JsonStringEnumMemberNameAttribute("translation")]
             Translation,
             
+            [System.Text.Json.Serialization.JsonStringEnumMemberNameAttribute("rotation")]
             Rotation,
             
+            [System.Text.Json.Serialization.JsonStringEnumMemberNameAttribute("scale")]
             Scale,
             
+            [System.Text.Json.Serialization.JsonStringEnumMemberNameAttribute("weights")]
             Weights,
         }
     }

@@ -365,18 +365,25 @@ namespace Brutal.GltfApi {
         /// </summary>
         public enum TypeEnum {
             
+            [System.Text.Json.Serialization.JsonStringEnumMemberNameAttribute("SCALAR")]
             Scalar,
             
+            [System.Text.Json.Serialization.JsonStringEnumMemberNameAttribute("VEC2")]
             Vec2,
             
+            [System.Text.Json.Serialization.JsonStringEnumMemberNameAttribute("VEC3")]
             Vec3,
             
+            [System.Text.Json.Serialization.JsonStringEnumMemberNameAttribute("VEC4")]
             Vec4,
             
+            [System.Text.Json.Serialization.JsonStringEnumMemberNameAttribute("MAT2")]
             Mat2,
             
+            [System.Text.Json.Serialization.JsonStringEnumMemberNameAttribute("MAT3")]
             Mat3,
             
+            [System.Text.Json.Serialization.JsonStringEnumMemberNameAttribute("MAT4")]
             Mat4,
         }
     }
