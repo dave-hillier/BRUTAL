@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Brutal.GltfApi;
 
@@ -9,6 +10,7 @@ public partial class Node : IExtensionGltfObject
     /// This is used when the "KHR_lights_punctual" extension is present.
     /// If the extension is not present or the light index is not defined, returns null.
     /// </summary>
+    [JsonIgnore]
     public int? LightIndex
     {
         get
