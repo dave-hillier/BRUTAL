@@ -7,7 +7,14 @@ namespace Brutal.Strings;
 /// Typically, but not necessarily, the bytes are UTF-8 encoded. Note that this type doesn't provide any special UTF-8 functionality.
 /// </remarks>
 [DebuggerDisplay("{ToString16()}")]
-public class String8 : IString8, IEquatable<String8?>, IComparable, IComparable<String8?>, ICloneable
+public class String8
+    : IString8,
+        IEquatable<String8?>,
+        IComparable,
+        IComparable<String8?>,
+        ICloneable,
+        IUtf8SpanFormattable,
+        ISpanFormattable
 {
     /// the default array backing any empty-initialized String8
     private static readonly Char8[] EmptyChars = [0];
@@ -132,6 +139,47 @@ public class String8 : IString8, IEquatable<String8?>, IComparable, IComparable<
     {
         return Utf8.GetString(Chars);
     }
+
+    #region string formatting: IUtf8SpanFormattable, ISpanFormattable, IFormattable
+
+    /// <inheritdoc/>
+    public override string ToString()
+    {
+        return ToString16();
+    }
+
+    /// <inheritdoc/>
+    /// <remarks><paramref name="format"/> and <paramref name="formatProvider"/> are ignored.</remarks>
+    string IFormattable.ToString(string? format, IFormatProvider? formatProvider)
+    {
+        return ToString16();
+    }
+
+    /// <inheritdoc/>
+    /// <remarks><paramref name="format"/> and <paramref name="provider"/> are ignored.</remarks>
+    bool ISpanFormattable.TryFormat(
+        Span<Char16> destination,
+        out int charsWritten,
+        ReadOnlySpan<Char16> format,
+        IFormatProvider? provider
+    )
+    {
+        return Utf<Char16>.TryGetElements(Chars, destination, out charsWritten);
+    }
+
+    /// <inheritdoc/>
+    /// <remarks><paramref name="format"/> and <paramref name="provider"/> are ignored.</remarks>
+    bool IUtf8SpanFormattable.TryFormat(
+        Span<Char8> destination,
+        out int bytesWritten,
+        ReadOnlySpan<Char16> format,
+        IFormatProvider? provider
+    )
+    {
+        return Utf<Char8>.TryGetElements(Chars, destination, out bytesWritten);
+    }
+
+    #endregion
 
     // Equality and comparison implementations
     public bool Equals(String8? other)
