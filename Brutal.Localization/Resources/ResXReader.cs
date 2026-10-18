@@ -61,9 +61,9 @@ public class ResXReader : IResourceReader
     }
 
     /// <summary>
-    /// Return the IDictionaryEnumerator of the currently loaded data.
+    /// Return an IDictionaryEnumerator of resource names to resource values.
     /// </summary>
-    /// <returns>The IDictionaryEnumerator of the currently loaded data.</returns>
+    /// <returns>An IDictionaryEnumerator of resource names to resource values.</returns>
     /// <exception cref="InvalidOperationException">Thrown if the ResXReader is closed.</exception>
     public IDictionaryEnumerator GetEnumerator()
     {
@@ -71,7 +71,7 @@ public class ResXReader : IResourceReader
             throw new InvalidOperationException("Reader is already closed");
 
         EnsureLoaded();
-        return _data.GetEnumerator();
+        return _data.ToDictionary(kv => kv.Key, kv => kv.Value.Value).GetEnumerator();
     }
 
     /// <summary>
