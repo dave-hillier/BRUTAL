@@ -43,7 +43,12 @@ public static class RandomExtensions
         if (minValue > maxValue)
             throw new ArgumentOutOfRangeException(nameof(minValue), @"minValue must be less than or equal to maxValue");
 
-        return random.NextSingle() * (maxValue - minValue) + minValue;
+        var value = random.NextSingle() * (maxValue - minValue) + minValue;
+        // Rounding can land on maxValue; step back below it to keep the upper bound exclusive
+        if (value >= maxValue && minValue < maxValue)
+            value = float.BitDecrement(maxValue);
+
+        return value;
     }
 
     /// <inheritdoc cref="NextSingle(System.Random, float, float)" />
@@ -52,7 +57,12 @@ public static class RandomExtensions
         if (minValue > maxValue)
             throw new ArgumentOutOfRangeException(nameof(minValue), @"minValue must be less than or equal to maxValue");
 
-        return random.NextDouble() * (maxValue - minValue) + minValue;
+        var value = random.NextDouble() * (maxValue - minValue) + minValue;
+        // Rounding can land on maxValue; step back below it to keep the upper bound exclusive
+        if (value >= maxValue && minValue < maxValue)
+            value = double.BitDecrement(maxValue);
+
+        return value;
     }
 
     /// <summary>
@@ -162,7 +172,7 @@ public static class RandomExtensions
         if (radius < 0)
             throw new ArgumentOutOfRangeException(nameof(radius), @"radius must be greater than or equal to 0");
 
-        var r = float.Sqrt(random.NextSingle()) * radius;
+        var r = float.Cbrt(random.NextSingle()) * radius;
         return r * random.NextSingleUnit3();
     }
 
@@ -172,7 +182,7 @@ public static class RandomExtensions
         if (radius < 0)
             throw new ArgumentOutOfRangeException(nameof(radius), @"radius must be greater than or equal to 0");
 
-        var r = double.Sqrt(random.NextDouble()) * radius;
+        var r = double.Cbrt(random.NextDouble()) * radius;
         return r * random.NextDoubleUnit3();
     }
 
@@ -200,15 +210,17 @@ public static class RandomExtensions
     public static float3 NextSingleUnit3(this Random random)
     {
         var theta = random.NextSingle(float.Tau);
-        var phi = random.NextSingle(float.Pi);
-        return new float3(float.Sin(phi) * float.Cos(theta), float.Sin(phi) * float.Sin(theta), float.Cos(phi));
+        var z = random.NextSingle(-1, 1);
+        var s = float.Sqrt(1 - z * z);
+        return new float3(s * float.Cos(theta), s * float.Sin(theta), z);
     }
 
     /// <inheritdoc cref="NextSingleUnit3" />
     public static double3 NextDoubleUnit3(this Random random)
     {
         var theta = random.NextDouble(double.Tau);
-        var phi = random.NextDouble(double.Pi);
-        return new double3(double.Sin(phi) * double.Cos(theta), double.Sin(phi) * double.Sin(theta), double.Cos(phi));
+        var z = random.NextDouble(-1, 1);
+        var s = double.Sqrt(1 - z * z);
+        return new double3(s * double.Cos(theta), s * double.Sin(theta), z);
     }
 }
