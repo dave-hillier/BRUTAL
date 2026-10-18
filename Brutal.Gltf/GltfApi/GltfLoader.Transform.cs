@@ -197,11 +197,12 @@ public static partial class GltfLoaderExtensions
     public static void Scale(this GltfLoader loader, float scale)
     {
         var gltf = loader.GltfJson;
-        var processedAccessors = ArrayPool<bool>.Shared.Rent(gltf.Accessors.Length);
-        Array.Clear(processedAccessors, 0, gltf.Accessors.Length);
+        var accessors = gltf.Accessors ?? [];
+        var processedAccessors = ArrayPool<bool>.Shared.Rent(accessors.Length);
+        Array.Clear(processedAccessors, 0, accessors.Length);
 
         // Nodes: scale TRS translation and explicit matrix translation row
-        foreach (var node in gltf.Nodes)
+        foreach (var node in gltf.Nodes ?? [])
         {
             var t = node.Translation;
             node.Translation = new float3(t.X * scale, t.Y * scale, t.Z * scale);
@@ -209,7 +210,7 @@ public static partial class GltfLoaderExtensions
         }
 
         // Mesh accessor data: positions only (normals and tangents are direction vectors)
-        foreach (var mesh in gltf.Meshes)
+        foreach (var mesh in gltf.Meshes ?? [])
         foreach (var prim in mesh.Primitives)
         {
             if (prim == null)
@@ -350,11 +351,12 @@ public static partial class GltfLoaderExtensions
     )
     {
         var gltf = loader.GltfJson;
-        var processedAccessors = ArrayPool<bool>.Shared.Rent(gltf.Accessors.Length);
-        Array.Clear(processedAccessors, 0, gltf.Accessors.Length);
+        var accessors = gltf.Accessors ?? [];
+        var processedAccessors = ArrayPool<bool>.Shared.Rent(accessors.Length);
+        Array.Clear(processedAccessors, 0, accessors.Length);
 
         // Nodes: negate the relevant TRS translation component, rotate quaternion, flip matrix
-        foreach (var node in gltf.Nodes)
+        foreach (var node in gltf.Nodes ?? [])
         {
             node.Translation = NegateFloat3Component(node.Translation, vecOff);
             node.Rotation = NegateQuatComponents(node.Rotation, quatOffA, quatOffB);
@@ -362,7 +364,7 @@ public static partial class GltfLoaderExtensions
         }
 
         // Mesh accessor data: positions, normals, tangents, index winding
-        foreach (var mesh in gltf.Meshes)
+        foreach (var mesh in gltf.Meshes ?? [])
         foreach (var prim in mesh.Primitives)
         {
             if (prim == null)
@@ -385,7 +387,7 @@ public static partial class GltfLoaderExtensions
             if (prim.Indices.HasValue && AddToSet(processedAccessors, prim.Indices.Value))
                 FlipTriangleWinding(
                     loader.GetAccessorBufferSpan(prim.Indices.Value),
-                    gltf.Accessors[prim.Indices.Value].ComponentType
+                    accessors[prim.Indices.Value].ComponentType
                 );
         }
 
@@ -464,11 +466,12 @@ public static partial class GltfLoaderExtensions
     private static void SwapAxesImpl(GltfLoader loader, int vecOffA, int vecOffB, ReadOnlySpan<int> matSwapPairs)
     {
         var gltf = loader.GltfJson;
-        var processedAccessors = ArrayPool<bool>.Shared.Rent(gltf.Accessors.Length);
-        Array.Clear(processedAccessors, 0, gltf.Accessors.Length);
+        var accessors = gltf.Accessors ?? [];
+        var processedAccessors = ArrayPool<bool>.Shared.Rent(accessors.Length);
+        Array.Clear(processedAccessors, 0, accessors.Length);
 
         // Nodes: swap the relevant TRS translation components, rotate quaternion, permute matrix
-        foreach (var node in gltf.Nodes)
+        foreach (var node in gltf.Nodes ?? [])
         {
             node.Translation = SwapFloat3Components(node.Translation, vecOffA, vecOffB);
             node.Rotation = SwapQuatComponentsNegateW(node.Rotation, vecOffA, vecOffB);
@@ -476,7 +479,7 @@ public static partial class GltfLoaderExtensions
         }
 
         // Mesh accessor data: positions, normals, tangents, index winding
-        foreach (var mesh in gltf.Meshes)
+        foreach (var mesh in gltf.Meshes ?? [])
         foreach (var prim in mesh.Primitives)
         {
             if (prim == null)
@@ -499,7 +502,7 @@ public static partial class GltfLoaderExtensions
             if (prim.Indices.HasValue && AddToSet(processedAccessors, prim.Indices.Value))
                 FlipTriangleWinding(
                     loader.GetAccessorBufferSpan(prim.Indices.Value),
-                    gltf.Accessors[prim.Indices.Value].ComponentType
+                    accessors[prim.Indices.Value].ComponentType
                 );
         }
 
