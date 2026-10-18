@@ -148,10 +148,13 @@ namespace Brutal.GltfApi {
         /// </summary>
         public enum InterpolationEnum {
             
+            [System.Text.Json.Serialization.JsonStringEnumMemberNameAttribute("LINEAR")]
             Linear,
             
+            [System.Text.Json.Serialization.JsonStringEnumMemberNameAttribute("STEP")]
             Step,
             
+            [System.Text.Json.Serialization.JsonStringEnumMemberNameAttribute("CUBICSPLINE")]
             Cubicspline,
         }
     }

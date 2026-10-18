@@ -1,5 +1,7 @@
+using System.Reflection;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 
 namespace Brutal.GltfApi;
 
@@ -159,7 +161,32 @@ public static class GltfUtility
         options.Converters.Add(new JsonHelpers.Float4JsonConverter());
         options.Converters.Add(new JsonHelpers.FloatQuatJsonConverter());
         options.Converters.Add(new JsonHelpers.Float4X4JsonConverter());
+        options.TypeInfoResolver = new DefaultJsonTypeInfoResolver { Modifiers = { HonorShouldSerializeMethods } };
         return options;
+    }
+
+    // The generated schema types omit default values through Newtonsoft-style ShouldSerializeX()
+    // methods, which System.Text.Json does not recognise on its own.
+    private static void HonorShouldSerializeMethods(JsonTypeInfo typeInfo)
+    {
+        if (typeInfo.Kind != JsonTypeInfoKind.Object)
+            return;
+
+        foreach (var property in typeInfo.Properties)
+        {
+            if (property.AttributeProvider is not MemberInfo member)
+                continue;
+
+            var method = typeInfo.Type.GetMethod(
+                $"ShouldSerialize{member.Name}",
+                BindingFlags.Public | BindingFlags.Instance,
+                Type.EmptyTypes
+            );
+            if (method == null || method.ReturnType != typeof(bool))
+                continue;
+
+            property.ShouldSerialize = (obj, _) => (bool)method.Invoke(obj, null)!;
+        }
     }
 
     internal static readonly JsonSerializerOptions JsonOptions = CreateSerializerOptions();
