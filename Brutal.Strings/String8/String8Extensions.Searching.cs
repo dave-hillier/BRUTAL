@@ -90,6 +90,9 @@ public static partial class String8Extensions
     public static int LastIndexOf<TString8>(this TString8 str, Char8 value, int startIndex, int count)
         where TString8 : IString8, allows ref struct
     {
+        if (str.Length == 0)
+            return -1;
+
         var actualStartIndex = startIndex - count + 1;
         var result = str.Chars.Slice(actualStartIndex, count).LastIndexOf(value);
         return result < 0 ? result : result + actualStartIndex;
@@ -115,6 +118,9 @@ public static partial class String8Extensions
     public static int LastIndexOfAny<TString8>(this TString8 str, String8View anyOf, int startIndex, int count)
         where TString8 : IString8, allows ref struct
     {
+        if (str.Length == 0)
+            return -1;
+
         var actualStartIndex = startIndex - count + 1;
         var result = str.Chars.Slice(actualStartIndex, count).LastIndexOfAny(anyOf);
         return result < 0 ? result : result + actualStartIndex;
