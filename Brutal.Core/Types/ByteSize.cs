@@ -80,7 +80,7 @@ public readonly record struct ByteSize32(uint Value)
 
     public static implicit operator ByteSize32(ByteSize value) => new(checked((uint)value.Value));
 
-    public static implicit operator int(ByteSize32 value) => (int)value.Value;
+    public static implicit operator int(ByteSize32 value) => checked((int)value.Value);
 
     public static explicit operator ByteSize32(int value) => new(checked((uint)value));
 
@@ -163,7 +163,7 @@ public readonly record struct ByteSize64(ulong Value)
 
     public static implicit operator ByteSize64(ByteSize value) => new(value.Value);
 
-    public static implicit operator int(ByteSize64 value) => (int)value.Value;
+    public static implicit operator int(ByteSize64 value) => checked((int)value.Value);
 
     public static explicit operator ByteSize64(int value) => new((ulong)value);
 
