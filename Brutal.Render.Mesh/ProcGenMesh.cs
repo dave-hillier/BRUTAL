@@ -127,14 +127,15 @@ public static partial class ProcGenMeshLibrary
         var buffer = stackalloc T[vectorLength];
 
         var vCount = inList.Length / vectorLength;
-        var ptr = inList.AsPointer();
+        var inPtr = inList.AsPointer();
+        var outPtr = outList.AsPointer();
         for (var i = 0; i < vCount; i++)
         {
             var vI = i * vectorLength;
             for (var ii = 0; ii < vectorLength; ii++)
-                buffer[ii] = ptr[vI + offsets[ii]];
+                buffer[ii] = inPtr[vI + offsets[ii]];
             for (var ii = 0; ii < vectorLength; ii++)
-                ptr[vI + ii] = buffer[ii];
+                outPtr[vI + ii] = buffer[ii];
         }
     }
 
