@@ -795,7 +795,7 @@ public static class PackUtils
             {
                 Pack.Float.Truncate => static input => (sbyte)input,
                 Pack.Float.Normalize => static input =>
-                    (sbyte)float.Min(sbyte.MaxValue, float.Floor(float.Clamp(input, 0, 1) * (sbyte.MaxValue + 1))),
+                    (sbyte)float.Min(sbyte.MaxValue, float.Floor(float.Clamp(input, -1, 1) * (sbyte.MaxValue + 1))),
                 Pack.Float.Clamp => static input => (sbyte)float.Clamp(input, sbyte.MinValue, sbyte.MaxValue),
                 Pack.Float.Round => static input =>
                     (sbyte)float.Round(float.Clamp(input, sbyte.MinValue, sbyte.MaxValue)),
@@ -825,7 +825,7 @@ public static class PackUtils
             {
                 Pack.Float.Truncate => static input => (short)input,
                 Pack.Float.Normalize => static input =>
-                    (short)float.Min(short.MaxValue, float.Floor(float.Clamp(input, 0, 1) * (short.MaxValue + 1))),
+                    (short)float.Min(short.MaxValue, float.Floor(float.Clamp(input, -1, 1) * (short.MaxValue + 1))),
                 Pack.Float.Clamp => static input => (short)float.Clamp(input, short.MinValue, short.MaxValue),
                 Pack.Float.Round => static input =>
                     (short)float.Round(float.Clamp(input, short.MinValue, short.MaxValue)),
@@ -857,7 +857,7 @@ public static class PackUtils
             {
                 Pack.Float.Truncate => static input => (int)input,
                 Pack.Float.Normalize => static input =>
-                    (int)float.Min(int.MaxValue, float.Floor(float.Clamp(input, 0, 1) * ((long)int.MaxValue + 1))),
+                    (int)float.Min(int.MaxValue, float.Floor(float.Clamp(input, -1, 1) * ((long)int.MaxValue + 1))),
                 Pack.Float.Clamp => static input => (int)float.Clamp(input, int.MinValue, int.MaxValue),
                 Pack.Float.Round => static input => (int)float.Round(float.Clamp(input, int.MinValue, int.MaxValue)),
                 Pack.Float.Floor => static input => (int)float.Floor(float.Clamp(input, int.MinValue, int.MaxValue)),
@@ -931,7 +931,8 @@ public static class PackUtils
             return mode switch
             {
                 Pack.Float.Truncate => static input => (sbyte)input,
-                Pack.Float.Normalize => static input => (sbyte)double.Floor(input * sbyte.MaxValue),
+                Pack.Float.Normalize => static input =>
+                    (sbyte)double.Min(sbyte.MaxValue, double.Floor(double.Clamp(input, -1, 1) * (sbyte.MaxValue + 1))),
                 Pack.Float.Clamp => static input => (sbyte)double.Clamp(input, sbyte.MinValue, sbyte.MaxValue),
                 Pack.Float.Round => static input =>
                     (sbyte)double.Round(double.Clamp(input, sbyte.MinValue, sbyte.MaxValue)),
@@ -946,7 +947,8 @@ public static class PackUtils
             return mode switch
             {
                 Pack.Float.Truncate => static input => (byte)input,
-                Pack.Float.Normalize => static input => (byte)double.Floor(input * byte.MaxValue),
+                Pack.Float.Normalize => static input =>
+                    (byte)double.Min(byte.MaxValue, double.Floor(double.Clamp(input, 0, 1) * (byte.MaxValue + 1))),
                 Pack.Float.Clamp => static input => (byte)double.Clamp(input, byte.MinValue, byte.MaxValue),
                 Pack.Float.Round => static input =>
                     (byte)double.Round(double.Clamp(input, byte.MinValue, byte.MaxValue)),
@@ -961,7 +963,8 @@ public static class PackUtils
             return mode switch
             {
                 Pack.Float.Truncate => static input => (short)input,
-                Pack.Float.Normalize => static input => (short)double.Floor(input * short.MaxValue),
+                Pack.Float.Normalize => static input =>
+                    (short)double.Min(short.MaxValue, double.Floor(double.Clamp(input, -1, 1) * (short.MaxValue + 1))),
                 Pack.Float.Clamp => static input => (short)double.Clamp(input, short.MinValue, short.MaxValue),
                 Pack.Float.Round => static input =>
                     (short)double.Round(double.Clamp(input, short.MinValue, short.MaxValue)),
@@ -976,7 +979,8 @@ public static class PackUtils
             return mode switch
             {
                 Pack.Float.Truncate => static input => (ushort)input,
-                Pack.Float.Normalize => static input => (ushort)double.Floor(input * ushort.MaxValue),
+                Pack.Float.Normalize => static input =>
+                    (ushort)double.Min(ushort.MaxValue, double.Floor(double.Clamp(input, 0, 1) * (ushort.MaxValue + 1))),
                 Pack.Float.Clamp => static input => (ushort)double.Clamp(input, ushort.MinValue, ushort.MaxValue),
                 Pack.Float.Round => static input =>
                     (ushort)double.Round(double.Clamp(input, ushort.MinValue, ushort.MaxValue)),
@@ -991,7 +995,8 @@ public static class PackUtils
             return mode switch
             {
                 Pack.Float.Truncate => static input => (int)input,
-                Pack.Float.Normalize => static input => (int)double.Floor(input * int.MaxValue),
+                Pack.Float.Normalize => static input =>
+                    (int)double.Min(int.MaxValue, double.Floor(double.Clamp(input, -1, 1) * ((long)int.MaxValue + 1))),
                 Pack.Float.Clamp => static input => (int)double.Clamp(input, int.MinValue, int.MaxValue),
                 Pack.Float.Round => static input => (int)double.Round(double.Clamp(input, int.MinValue, int.MaxValue)),
                 Pack.Float.Floor => static input => (int)double.Floor(double.Clamp(input, int.MinValue, int.MaxValue)),
@@ -1004,7 +1009,8 @@ public static class PackUtils
             return mode switch
             {
                 Pack.Float.Truncate => static input => (uint)input,
-                Pack.Float.Normalize => static input => (uint)double.Floor(input * uint.MaxValue),
+                Pack.Float.Normalize => static input =>
+                    (uint)double.Min(uint.MaxValue, double.Floor(double.Clamp(input, 0, 1) * ((ulong)uint.MaxValue + 1))),
                 Pack.Float.Clamp => static input => (uint)double.Clamp(input, uint.MinValue, uint.MaxValue),
                 Pack.Float.Round => static input =>
                     (uint)double.Round(double.Clamp(input, uint.MinValue, uint.MaxValue)),
