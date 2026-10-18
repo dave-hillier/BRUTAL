@@ -90,8 +90,9 @@ public static partial class String8Extensions
     public static int LastIndexOf<TString8>(this TString8 str, Char8 value, int startIndex, int count)
         where TString8 : IString8, allows ref struct
     {
-        var result = str.Chars.Slice(startIndex, count).LastIndexOf(value);
-        return result < 0 ? result : result + startIndex;
+        var actualStartIndex = startIndex - count + 1;
+        var result = str.Chars.Slice(actualStartIndex, count).LastIndexOf(value);
+        return result < 0 ? result : result + actualStartIndex;
     }
 
     // Returns the index of the last occurrence of any specified character in the current instance.
