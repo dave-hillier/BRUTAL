@@ -310,14 +310,8 @@ public static partial class ProcGenMeshLibrary
 
         var vPtr = vertices.Ptr.Cast<float3>().Offset(vStart);
         var vCount = vertices.Count - vStart;
-        for (var i = 0; i < vCount; ++i)
-        {
-            var uv = vPtr[i];
-            vPtr[i] =
-                ToroidialToCartesian(uv.X * resScale.X + resOffset.X, uv.Y * resScale.Y + resOffset.Y, radiusA, radiusB)
-                + origin;
-        }
 
+        // Normals are generated from the grid coordinates, before they are overwritten with positions
         if (output.OutNormals != null)
         {
             var normals = output.OutNormals;
@@ -327,9 +321,22 @@ public static partial class ProcGenMeshLibrary
             for (var i = 0; i < vCount; ++i)
             {
                 var uv = vPtr[i];
-                var normal = float3.Normalize(uv - origin);
-                nPtr[vIndex++] = normal;
+                // Unit tube radius around a zero main radius gives the direction from the tube centre
+                nPtr[vIndex++] = ToroidialToCartesian(
+                    uv.X * resScale.X + resOffset.X,
+                    uv.Y * resScale.Y + resOffset.Y,
+                    0f,
+                    1f
+                );
             }
+        }
+
+        for (var i = 0; i < vCount; ++i)
+        {
+            var uv = vPtr[i];
+            vPtr[i] =
+                ToroidialToCartesian(uv.X * resScale.X + resOffset.X, uv.Y * resScale.Y + resOffset.Y, radiusA, radiusB)
+                + origin;
         }
     }
 
