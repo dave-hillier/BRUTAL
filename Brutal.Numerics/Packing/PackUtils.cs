@@ -736,7 +736,7 @@ public static class PackUtils
             return mode switch
             {
                 Unpack.Float.Cast => static i => i,
-                Unpack.Float.Normalize => static i => i / (float)int.MaxValue,
+                Unpack.Float.Normalize => static i => i / (float)uint.MaxValue,
                 _ => throw new ArgumentOutOfRangeException(nameof(mode), mode, null),
             };
         }
@@ -746,7 +746,7 @@ public static class PackUtils
             return mode switch
             {
                 Unpack.Float.Cast => static i => i,
-                Unpack.Float.Normalize => static i => i / (double)int.MaxValue,
+                Unpack.Float.Normalize => static i => i / (double)uint.MaxValue,
                 _ => throw new ArgumentOutOfRangeException(nameof(mode), mode, null),
             };
         }
