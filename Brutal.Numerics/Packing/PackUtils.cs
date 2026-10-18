@@ -401,7 +401,8 @@ public static class PackUtils
             return mode switch
             {
                 Unpack.Float.Cast => static input => input,
-                Unpack.Float.Normalize => static input => input / (float)short.MaxValue,
+                Unpack.Float.Normalize => static input =>
+                    input >= 0 ? input / (float)short.MaxValue : -(input / (float)short.MinValue),
                 _ => throw new ArgumentOutOfRangeException(nameof(mode), mode, null),
             };
         }
@@ -411,7 +412,8 @@ public static class PackUtils
             return mode switch
             {
                 Unpack.Float.Cast => static input => input,
-                Unpack.Float.Normalize => static input => input / (double)short.MaxValue,
+                Unpack.Float.Normalize => static input =>
+                    input >= 0 ? input / (double)short.MaxValue : -(input / (double)short.MinValue),
                 _ => throw new ArgumentOutOfRangeException(nameof(mode), mode, null),
             };
         }
