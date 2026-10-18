@@ -537,7 +537,7 @@ public static partial class ProcGenMeshLibrary
                 var uv = vPtr[i];
                 var angle = uv.X * scale;
                 var heightOffset = uv.Y * height;
-                var normal = right * MathF.Cos(angle) * radius + up * MathF.Sin(angle);
+                var normal = right * MathF.Cos(angle) + up * MathF.Sin(angle);
                 nPtr[i] = normal;
                 vPtr[i] = origin + normal * radius + axis * heightOffset;
             }
