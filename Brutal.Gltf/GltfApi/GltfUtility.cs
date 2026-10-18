@@ -863,7 +863,7 @@ public static class GltfUtility
                             File.Copy(sourceFilePath, destinationFilePath, true);
                         }
 
-                        image.Uri = fileName;
+                        image.Uri = Uri.EscapeDataString(fileName);
                     }
                 }
                 else if (image.BufferView.HasValue)
@@ -888,7 +888,7 @@ public static class GltfUtility
 
                         image.BufferView = null;
                         image.MimeType = null;
-                        image.Uri = fileName;
+                        image.Uri = Uri.EscapeDataString(fileName);
                     }
                 }
             }
@@ -946,7 +946,7 @@ public static class GltfUtility
             }
             else
             {
-                binBuffer?.Uri = binFileName;
+                binBuffer?.Uri = Uri.EscapeDataString(binFileName);
                 binBuffer?.ByteLength = binByteLength;
             }
 
@@ -1012,7 +1012,7 @@ public static class GltfUtility
                         File.Copy(sourceFilePath, destinationFilePath, true);
                     }
 
-                    buffer.Uri = fileName;
+                    buffer.Uri = Uri.EscapeDataString(fileName);
                 }
             }
         }
