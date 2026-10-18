@@ -123,10 +123,14 @@ public class NativeList<TValueType> : INativeList<TValueType>
         _nativeList.Free();
     }
 
-    public IEnumerator<TValueType> GetEnumerator()
+    public NativeListEnumerator<TValueType> GetEnumerator()
     {
-        for (var i = 0; i < Count; ++i)
-            yield return this[i];
+        return new NativeListEnumerator<TValueType>(this);
+    }
+
+    IEnumerator<TValueType> IEnumerable<TValueType>.GetEnumerator()
+    {
+        return GetEnumerator();
     }
 
     IEnumerator IEnumerable.GetEnumerator()
