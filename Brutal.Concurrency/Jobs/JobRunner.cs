@@ -80,6 +80,13 @@ public class JobRunner
     public JobState State => ReadStateSynchronised();
 
     /// <summary>
+    /// The exception thrown by a job during the last execution, if that execution's result was <see cref="ExecutionResult.Faulted"/>; otherwise null.
+    /// Cleared when <see cref="ExecuteJobs"/> is next called.
+    /// </summary>
+    /// <remarks>Only read this once the runner is Idle again, or from within the completion callback.</remarks>
+    public Exception? LastException { get; private set; }
+
+    /// <summary>
     /// Queue a job to the JobRunner if it is currently idle.
     /// </summary>
     /// <param name="job">The job to queue</param>
@@ -116,8 +123,10 @@ public class JobRunner
     /// Starts execution of all queued jobs.
     /// After a call to ExecuteJobs() no more jobs can be queued until the runner is idle.
     /// </summary>
-    /// <param name="onCompleteHandler" cref="JobCompletedDelegate" >An optional callback that is invoked when the JobRunner jobs have finished or been aborted.</param>
-    /// <remarks>If there are no jobs to run, metrics are not updated, but the callback is still called with the last tick time being set to 0</remarks>
+    /// <param name="onCompleteHandler" cref="JobCompletedDelegate" >An optional callback that is invoked when the JobRunner jobs have finished, been aborted or a job has thrown.</param>
+    /// <remarks>Metrics are updated only when every job ran (<see cref="ExecutionResult.Success"/>); an aborted or faulted run is not recorded,
+    /// although the callback still receives that run's duration. If there are no jobs to run, metrics are not updated, but the callback is still
+    /// called with the last tick time being set to 0.</remarks>
     /// <exception cref="InvalidOperationException">Thrown if the runner is not currently idle</exception>
     public void ExecuteJobs(JobCompletedDelegate? onCompleteHandler = null)
     {
@@ -128,6 +137,7 @@ public class JobRunner
         lock (_lock)
         {
             CheckedTransitionState(JobState.Idle, JobState.Scheduled);
+            LastException = null;
         }
 
         if (_jobs.Count == 0)
@@ -308,6 +318,13 @@ public class JobRunner
                 job.Run();
             }
         }
+        catch (Exception e)
+        {
+            // An exception escaping a ThreadPool work item terminates the process, so it must not leave DoWork.
+            // Like an abort, the remaining jobs are not run.
+            LastException = e;
+            executionResult = ExecutionResult.Faulted;
+        }
         finally
         {
             var lastTickTime = StopTimerAndUpdateMetrics(executionResult);
@@ -326,10 +343,11 @@ public class JobRunner
     {
         lock (_lock)
         {
-            _timer.Stop();
+            var elapsedMillis = _timer.Stop();
             if (executionResult != ExecutionResult.Success)
-                return _timer.LastMillis;
+                return elapsedMillis;
 
+            _timer.Commit();
             _metrics.AverageTickTimeMillis = _timer.AverageMillis;
             _metrics.MaxTickTimeMillis = _timer.MaxMillis;
             _metrics.LastTickTimeMillis = _timer.LastMillis;

@@ -50,10 +50,16 @@ public class MovingAverage<TNumber>
     /// <returns></returns>
     public TNumber Update(TNumber sample)
     {
-        _sum = _sum - _values[_index] + sample;
         _values[_index] = sample;
         _index = (_index + 1) % _maxWindowSampleCount;
         _currentWindowSampleCount = Math.Min(_currentWindowSampleCount + 1, _maxWindowSampleCount);
+
+        // Sum the window rather than keeping a running total, so floating-point
+        // rounding and non-finite samples are forgotten once they leave the window.
+        _sum = TNumber.Zero;
+        for (var i = 0; i < _currentWindowSampleCount; i++)
+            _sum += _values[i];
+
         return _sum / TNumber.CreateTruncating(_currentWindowSampleCount);
     }
 
