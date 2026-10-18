@@ -34,7 +34,7 @@ public class Namespace<T>
         {
             if (_pool.TryGet(id, out var key))
             {
-                existing = new Name<T>(key);
+                existing = new Name<T>(key, this);
                 return true;
             }
 
