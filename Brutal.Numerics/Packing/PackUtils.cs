@@ -139,7 +139,7 @@ public static class PackUtils
         {
             return mode switch
             {
-                Unpack.Integer.Cast => static input => (byte)input,
+                Unpack.Integer.Cast => static input => input,
                 Unpack.Integer.Scale => static input =>
                     input > 0
                         ? (short)float.Round(input * (float)short.MaxValue / sbyte.MaxValue)
