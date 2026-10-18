@@ -1,0 +1,9 @@
+<Solution>
+  <Project Path="Brutal.Collections/Brutal.Collections.csproj" />
+  <Project Path="Brutal.Core/Brutal.Core.csproj" />
+  <Project Path="Brutal.Localization.Tests/Brutal.Localization.Tests.csproj" />
+  <Project Path="Brutal.Localization/Brutal.Localization.csproj" />
+  <Project Path="Brutal.Logging/Brutal.Logging.csproj" />
+  <Project Path="Brutal.Memory/Brutal.Memory.csproj" />
+  <Project Path="Brutal.Strings/Brutal.Strings.csproj" />
+</Solution>
