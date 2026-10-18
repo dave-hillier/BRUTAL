@@ -34,6 +34,8 @@ public ref struct RefString8Array(ElementCount length, ByteSize numBytes) : IDis
         }
 
         Debug.Assert(written == (int)NumBytes);
+        Count = strings.Length;
+        _written = written;
     }
 
     public RefString8Array(ReadOnlySpan<String8> strings)
@@ -56,12 +58,16 @@ public ref struct RefString8Array(ElementCount length, ByteSize numBytes) : IDis
         }
 
         Debug.Assert(written == (int)NumBytes);
+        Count = strings.Length;
+        _written = written;
     }
 
     public unsafe Char8** CommitFixedRegion(Char8* fixedPointer)
     {
         if (_disposed)
             throw new ObjectDisposedException(nameof(RefString8Array));
+        if (Count != Length)
+            throw new InvalidOperationException($"Only {(int)Count} of {(int)Length} strings have been appended");
         Debug.Assert(fixedPointer == Unsafe.AsPointer(ref _owner.Span[0]));
 
         var bytes = new Span<Char8>(fixedPointer, _owner.Span.Length);
