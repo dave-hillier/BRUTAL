@@ -352,6 +352,9 @@ public sealed class NativeList : INativeList
         if (index >= Size)
             throw new IndexOutOfRangeException();
 
+        if (numBytes > Size - index)
+            throw new IndexOutOfRangeException();
+
         if (index < Size - numBytes)
         {
             Mem.Copy(Ptr.Offset(index + numBytes), Ptr.Offset(index), Size - index - numBytes);
