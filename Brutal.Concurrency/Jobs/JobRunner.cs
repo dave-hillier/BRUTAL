@@ -326,10 +326,11 @@ public class JobRunner
     {
         lock (_lock)
         {
-            _timer.Stop();
+            var elapsedMillis = _timer.Stop();
             if (executionResult != ExecutionResult.Success)
-                return _timer.LastMillis;
+                return elapsedMillis;
 
+            _timer.Commit();
             _metrics.AverageTickTimeMillis = _timer.AverageMillis;
             _metrics.MaxTickTimeMillis = _timer.MaxMillis;
             _metrics.LastTickTimeMillis = _timer.LastMillis;
