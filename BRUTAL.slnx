@@ -1,0 +1,13 @@
+<Solution>
+  <Project Path="Brutal.Collections/Brutal.Collections.csproj" />
+  <Project Path="Brutal.Core/Brutal.Core.csproj" />
+  <Project Path="Brutal.Gli/Brutal.Gli.csproj" />
+  <Project Path="Brutal.Gltf.Tests/Brutal.Gltf.Tests.csproj" />
+  <Project Path="Brutal.Gltf/Brutal.Gltf.csproj" />
+  <Project Path="Brutal.Ktx/Brutal.Ktx.csproj" />
+  <Project Path="Brutal.Memory/Brutal.Memory.csproj" />
+  <Project Path="Brutal.Numerics/Brutal.Numerics.csproj" />
+  <Project Path="Brutal.Stb/Brutal.Stb.csproj" />
+  <Project Path="Brutal.Strings/Brutal.Strings.csproj" />
+  <Project Path="Brutal.Texture/Brutal.Texture.csproj" />
+</Solution>
