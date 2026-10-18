@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="Brutal.Collections.Tests.CrashRepro/Brutal.Collections.Tests.CrashRepro.csproj" />
+  <Project Path="Brutal.Collections.Tests/Brutal.Collections.Tests.csproj" />
+  <Project Path="Brutal.Collections/Brutal.Collections.csproj" />
+  <Project Path="Brutal.Core/Brutal.Core.csproj" />
+  <Project Path="Brutal.Memory/Brutal.Memory.csproj" />
+</Solution>
