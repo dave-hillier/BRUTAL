@@ -137,8 +137,8 @@ public sealed class NativeList : INativeList
 
     ElementCount INativeList.Capacity
     {
-        get => ElementCount.Of(_byteSize.Bytes);
-        set => Size = ByteSize.Of(value);
+        get => ElementCount.Of(_byteCapacity.Bytes);
+        set => Capacity = ByteSize.Of(value);
     }
 
     /// <summary>
