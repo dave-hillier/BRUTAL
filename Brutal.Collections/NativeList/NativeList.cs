@@ -305,6 +305,8 @@ public sealed class NativeList : INativeList
             Mem.Free(Ptr);
             Ptr = newPtr;
         }
+
+        _byteSize += ByteSize.One;
     }
 
     /// <summary>
