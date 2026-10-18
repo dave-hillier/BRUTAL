@@ -363,7 +363,7 @@ public readonly record struct ByteSize(nuint Value)
     /// </summary>
     public ElementCount ToElementCount(ByteSize stride)
     {
-        return new ElementCount((int)(Bytes / stride.Bytes));
+        return new ElementCount(checked((int)(Bytes / stride.Bytes)));
     }
 
     /// <summary>
