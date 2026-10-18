@@ -12,15 +12,20 @@ public readonly ref struct RefString8 : IString8
 {
     private readonly ref Char8 _firstChar;
 
+    // Span length the string was created from, or -1 when created from a pointer.
+    private readonly int _maxLength;
+
     public static RefString8 Empty => String8View.Empty;
 
     /// <summary>
     /// Create a safe reference to a null-terminated string of bytes.
+    /// Managed reads stop at the first null or the end of <paramref name="cString"/>, whichever comes first.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public RefString8(String8View cString)
     {
         _firstChar = ref MemoryMarshal.GetReference(cString);
+        _maxLength = cString.Length;
     }
 
     /// <summary>
@@ -30,6 +35,7 @@ public readonly ref struct RefString8 : IString8
     public unsafe RefString8([Fixed] Ptr<Char8> pointer)
     {
         _firstChar = ref Unsafe.AsRef<Char8>(pointer);
+        _maxLength = -1;
     }
 
     /// <summary>
@@ -99,9 +105,20 @@ public readonly ref struct RefString8 : IString8
         return ref _firstChar;
     }
 
-    public unsafe String8View Chars => Utf8.GetNullTerminatedSpan((Ptr<Char8>)Unsafe.AsPointer(ref _firstChar));
+    public unsafe String8View Chars
+    {
+        get
+        {
+            if (_maxLength < 0)
+                return Utf8.GetNullTerminatedSpan((Ptr<Char8>)Unsafe.AsPointer(ref _firstChar));
+
+            var bytes = MemoryMarshal.CreateReadOnlySpan(ref _firstChar, _maxLength);
+            return bytes[..Utf8.EvaluateLength(bytes)];
+        }
+    }
+
     public int Length => Chars.Length;
-    public bool IsEmpty => Unsafe.IsNullRef(ref _firstChar) || _firstChar == 0;
+    public bool IsEmpty => Unsafe.IsNullRef(ref _firstChar) || _maxLength == 0 || _firstChar == 0;
 
     public Char8 this[int index] => Chars[index];
     public String8View this[Range range] => Chars[range];
