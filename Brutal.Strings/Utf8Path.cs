@@ -87,7 +87,7 @@ public static partial class Utf8
 
             var charCount = GetCharCount(path);
             Span<Char16> chars = stackalloc Char16[charCount];
-            if (ToUtf16(path, chars, out _, out _) != OperationStatus.Done)
+            if (ToUtf16(path, chars, out _, out _, replaceInvalidSequences: false) != OperationStatus.Done)
                 throw new ArgumentException("Invalid UTF-8 path", nameof(path));
 
             var directoryName = Path16.GetDirectoryName(chars);
@@ -104,7 +104,7 @@ public static partial class Utf8
 
             var charCount = GetCharCount(path);
             Span<Char16> chars = stackalloc Char16[charCount];
-            if (ToUtf16(path, chars, out _, out _) != OperationStatus.Done)
+            if (ToUtf16(path, chars, out _, out _, replaceInvalidSequences: false) != OperationStatus.Done)
                 throw new ArgumentException("Invalid UTF-8 path", nameof(path));
 
             var fileName = Path16.GetFileName(chars);
@@ -241,7 +241,7 @@ public static partial class Utf8
                 return false;
 
             Span<Char16> chars = stackalloc Char16[charCount];
-            if (ToUtf16(path, chars, out _, out _) != OperationStatus.Done)
+            if (ToUtf16(path, chars, out _, out _, replaceInvalidSequences: false) != OperationStatus.Done)
                 throw new ArgumentException("Invalid UTF-8 path", nameof(path));
 
             return Path16.IsPathFullyQualified(chars);
