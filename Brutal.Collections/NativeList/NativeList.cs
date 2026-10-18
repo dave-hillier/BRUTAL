@@ -225,7 +225,7 @@ public sealed class NativeList : INativeList
         var stride = ByteSize.Of<T>();
         if (Capacity - Size < stride)
         {
-            GrowInternal(Size == 0 ? ByteSize.Of<T>(DEFAULT_CAPACITY) : Size * 2);
+            GrowInternal(Size == 0 ? ByteSize.Of<T>(DEFAULT_CAPACITY) : Size + stride);
         }
         _byteSize = _byteSize + stride;
         Ptr.Offset(offset).Cast<T>().Value = data;
