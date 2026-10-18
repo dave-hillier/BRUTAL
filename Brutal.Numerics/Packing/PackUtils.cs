@@ -171,7 +171,7 @@ public static class PackUtils
         {
             return mode switch
             {
-                Unpack.IntegerMixed.Cast => static input => (byte)input,
+                Unpack.IntegerMixed.Cast => static input => (uint)input,
                 _ => throw new ArgumentOutOfRangeException(nameof(mode), mode, null),
             };
         }
