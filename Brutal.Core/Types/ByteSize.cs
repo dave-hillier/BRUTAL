@@ -350,10 +350,18 @@ public readonly record struct ByteSize(nuint Value)
         if (Bytes == 0)
             return "0 B";
 
-        var order = (int)Math.Floor(Math.Log(Bytes, 1024));
-        order = Math.Min(order, Suffixes.Length - 1);
+        var order = 0;
+        for (var remaining = Bytes; remaining >= 1024 && order < Suffixes.Length - 1; remaining /= 1024)
+            order++;
 
-        var value = Bytes / Math.Pow(1024, order);
+        var value = Math.Round(Bytes / Math.Pow(1024, order), 2);
+
+        // Rounding can carry the value up to the next unit, e.g. 1023.999 KB -> 1 MB
+        if (value >= 1024 && order < Suffixes.Length - 1)
+        {
+            order++;
+            value = Math.Round(Bytes / Math.Pow(1024, order), 2);
+        }
 
         return $"{value:0.##} {Suffixes[order]}";
     }
