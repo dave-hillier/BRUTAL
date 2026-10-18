@@ -147,6 +147,27 @@ public class UntypedNativeListTests
             $"Expected an out-of-range exception but got {exception?.GetType().Name ?? "none"}; Size is now {(int)list.Size}"
         );
     }
+
+    [Fact]
+    public void RemovingMoreBytesThanTheListHolds_ThrowsAndLeavesTheListIntact()
+    {
+        using var list = new NativeList([1, 2, 3, 4]);
+
+        Assert.Throws<IndexOutOfRangeException>(() => list.RemoveAt(ByteSize.Zero, ByteSize.Of(5)));
+
+        Assert.Equal(new byte[] { 1, 2, 3, 4 }, list.AsSpan<byte>().ToArray());
+    }
+
+    [Fact]
+    public void ByteIndexerSetter_WritesTheByte()
+    {
+        using var list = new NativeList([1, 2, 3]);
+
+        list[1] = 9;
+
+        Assert.Equal(new byte[] { 1, 9, 3 }, list.AsSpan<byte>().ToArray());
+        Assert.Throws<IndexOutOfRangeException>(() => list[3] = 0);
+    }
 }
 
 public class UntypedNativeListAsSpanLikeTests

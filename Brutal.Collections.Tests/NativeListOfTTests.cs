@@ -85,6 +85,12 @@ public class NativeListOfTTests
 
         Assert.True(exitCode == 0, $"exit code {exitCode}: {output}");
     }
+
+    [Fact]
+    public void NegativeCapacity_ThrowsArgumentOutOfRange()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() => new NativeList<int>(-1));
+    }
 }
 
 public class NativeListPinningTests

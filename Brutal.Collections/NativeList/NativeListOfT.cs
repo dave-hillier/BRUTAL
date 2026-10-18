@@ -8,15 +8,13 @@ namespace Brutal.Collections;
 /// <summary>
 /// A native-memory backed list with a fixed type
 /// </summary>
+/// <remarks>
+/// The memory is owned by an inner <see cref="NativeList"/>, which has its own finalizer.
+/// </remarks>
 /// <typeparam name="TValueType">Element type</typeparam>
 public class NativeList<TValueType> : INativeList<TValueType>
     where TValueType : unmanaged
 {
-    ~NativeList()
-    {
-        Dispose();
-    }
-
     private readonly NativeStrideList _nativeList;
 
     public NativeList(ElementCount capacity = default)
@@ -29,46 +27,39 @@ public class NativeList<TValueType> : INativeList<TValueType>
         _nativeList = NativeStrideList.FromSpan(Stride, nativeList);
     }
 
+    /// <summary>
+    /// Frees the native memory. Safe to call more than once.
+    /// </summary>
     public void Dispose()
     {
-        _nativeList.Dispose();
+        Dispose(true);
         GC.SuppressFinalize(this);
     }
 
-    public bool IsNull()
+    protected virtual void Dispose(bool isDisposing)
     {
-        return _nativeList.IsNull();
+        if (isDisposing)
+            _nativeList.Dispose();
     }
+
+    public bool IsNull() => _nativeList.IsNull();
 
     public ByteSize Stride => ByteSize.Of<TValueType>();
-    public bool IsEmpty => Count == 0;
+    public bool IsEmpty => _nativeList.IsEmpty;
 
-    public ref TValueType this[Index index]
-    {
-        get
-        {
-            var actualIndex = index.GetOffset(Count);
-            return ref _nativeList.AsSpan<TValueType>()[actualIndex];
-        }
-    }
+    public ref TValueType this[Index index] => ref AsSpan()[index];
 
-    public void Add(TValueType item)
-    {
-        _nativeList.Add(item);
-    }
+    [Fixed]
+    public Span<TValueType> this[Range range] => AsSpan()[range];
 
-    public void AddRange(Span<TValueType> items)
-    {
-        _nativeList.AddRange(items);
-    }
+    public void Add(TValueType item) => _nativeList.Add(item);
 
-    public void AddRange(ReadOnlySpan<TValueType> items)
-    {
-        _nativeList.AddRange(items);
-    }
+    public void AddRange(Span<TValueType> items) => _nativeList.AddRange(items);
+
+    public void AddRange(ReadOnlySpan<TValueType> items) => _nativeList.AddRange(items);
 
     /// <summary>
-    /// Adds a range of bytes to the end of the list. The length of items must be a multiple of stride
+    /// Adds the elements of a typed span-like to the end of the list
     /// </summary>
     public void AddRange<T>(T items)
         where T : ISpanLike<TValueType>
@@ -76,15 +67,9 @@ public class NativeList<TValueType> : INativeList<TValueType>
         _nativeList.AddRange(items.AsSpan());
     }
 
-    public void Insert(ElementCount index, TValueType item)
-    {
-        _nativeList.Insert(index, item);
-    }
+    public void Insert(ElementCount index, TValueType item) => _nativeList.Insert(index, item);
 
-    public void RemoveAt(ElementCount index)
-    {
-        _nativeList.RemoveAt<TValueType>(index);
-    }
+    public void RemoveAt(ElementCount index) => _nativeList.RemoveAt<TValueType>(index);
 
     public Ptr<TValueType> Ptr => _nativeList.Ptr.Cast<TValueType>();
 
@@ -103,76 +88,36 @@ public class NativeList<TValueType> : INativeList<TValueType>
         set => _nativeList.Capacity = value;
     }
 
-    public void Clear()
-    {
-        _nativeList.Clear();
-    }
+    public void Clear() => _nativeList.Clear();
 
-    public void TrimExcess()
-    {
-        _nativeList.TrimExcess();
-    }
+    public void TrimExcess() => _nativeList.TrimExcess();
 
-    public void EnsureCapacity(ElementCount capacity)
-    {
-        _nativeList.EnsureCapacity(capacity);
-    }
+    public void EnsureCapacity(ElementCount capacity) => _nativeList.EnsureCapacity(capacity);
 
-    public void Free()
-    {
-        _nativeList.Free();
-    }
+    public void Free() => _nativeList.Free();
 
-    public IEnumerator<TValueType> GetEnumerator()
-    {
-        for (var i = 0; i < Count; ++i)
-            yield return this[i];
-    }
+    /// <summary>
+    /// Returns an allocation-free enumerator, so foreach does not allocate
+    /// </summary>
+    public NativeListEnumerator<TValueType> GetEnumerator() => new(this);
 
-    IEnumerator IEnumerable.GetEnumerator()
-    {
-        return GetEnumerator();
-    }
+    IEnumerator<TValueType> IEnumerable<TValueType>.GetEnumerator() => GetEnumerator();
 
-    public Span<TValueType> Slice(ElementCount start, ElementCount length)
-    {
-        return AsSpan().Slice(start, length);
-    }
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-    public Span<TValueType> Slice(ElementCount start)
-    {
-        return AsSpan()[(int)start..];
-    }
+    public Span<TValueType> Slice(ElementCount start, ElementCount length) => AsSpan().Slice(start, length);
 
-    [Fixed]
-    public Span<TValueType> this[Range range] => AsSpan()[range];
+    public Span<TValueType> Slice(ElementCount start) => AsSpan()[(int)start..];
 
     [return: Fixed]
-    public Span<TValueType> AsSpan()
-    {
-        return _nativeList.AsSpan<TValueType>();
-    }
+    public Span<TValueType> AsSpan() => _nativeList.AsSpan<TValueType>();
 
-    Span<TCastType> ISpanLike.AsSpan<TCastType>()
-    {
-        return _nativeList.AsSpan<TCastType>();
-    }
+    Span<TCastType> ISpanLike.AsSpan<TCastType>() => _nativeList.AsSpan<TCastType>();
 
-    public NativeStrideSpan AsNativeSpan()
-    {
-        return new NativeStrideSpan(Ptr, Count, Stride);
-    }
+    public NativeStrideSpan AsNativeSpan() => new(Ptr, Count, Stride);
 
-    protected virtual void Dispose(bool isDisposing)
-    {
-        if (!isDisposing)
-            return;
-
-        _nativeList.Dispose();
-    }
-
-    public ref TValueType GetPinnableReference()
-    {
-        return ref this[0];
-    }
+    /// <summary>
+    /// Supports <c>fixed</c>. Like <see cref="Span{T}"/>, an empty list pins to a null pointer.
+    /// </summary>
+    public ref TValueType GetPinnableReference() => ref AsSpan().GetPinnableReference();
 }

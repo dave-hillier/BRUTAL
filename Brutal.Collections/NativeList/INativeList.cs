@@ -3,7 +3,7 @@ using Brutal.Memory;
 namespace Brutal.Collections;
 
 /// <summary>
-/// Base class for native-memory backed lists
+/// Common interface for native-memory backed lists
 /// </summary>
 public interface INativeList : ISpanLike, IDisposable
 {
@@ -16,7 +16,7 @@ public interface INativeList : ISpanLike, IDisposable
     public void Clear();
 
     /// <summary>
-    /// Set the capacity to the actual number of elements in the list, if the current
+    /// Set the capacity to the actual number of elements in the list
     /// </summary>
     public void TrimExcess();
 

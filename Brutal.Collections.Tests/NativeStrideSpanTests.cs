@@ -35,4 +35,15 @@ public class NativeStrideSpanRangeTests
 
         Assert.Equal(3, tail.Length.Value);
     }
+
+    [Fact]
+    public void RangesAndSlicesOutsideTheSpan_Throw()
+    {
+        int[] data = [1, 2, 3, 4, 5];
+
+        Assert.Throws<ArgumentOutOfRangeException>(() => _ = NativeStrideSpan.FromSpan<int>(data)[3..7]);
+        Assert.Throws<ArgumentOutOfRangeException>(() => _ = NativeStrideSpan.FromSpan<int>(data)[3..2]);
+        Assert.Throws<ArgumentOutOfRangeException>(() => _ = NativeStrideSpan.FromSpan<int>(data).Slice(4, 2));
+        Assert.Throws<ArgumentOutOfRangeException>(() => _ = NativeStrideSpan.FromSpan<int>(data).Slice(-1, 1));
+    }
 }
