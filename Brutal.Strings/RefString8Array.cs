@@ -12,6 +12,7 @@ public ref struct RefString8Array(ElementCount length, ByteSize numBytes) : IDis
     public ElementCount Length = length;
     public ByteSize NumBytes = numBytes;
     private bool _disposed = false;
+    private int _written;
 
     public RefString8Array(ReadOnlySpan<String16> strings)
         : this(strings.Length, GetTotalByteCount(strings))
@@ -82,8 +83,16 @@ public ref struct RefString8Array(ElementCount length, ByteSize numBytes) : IDis
         if (Count == Length)
             throw new InvalidOperationException("Array is full");
 
-        _owner.Span[(int)(NumBytes + ByteSize.Of<nint>(Count))] = (Char8)str.Length;
-        str.CopyTo(_owner.Span[(int)(NumBytes + ByteSize.Of<nint>(Count) + 1)..]);
+        if (_written + str.Length + 1 > (int)NumBytes)
+            throw new InvalidOperationException("Not enough space for string");
+
+        var bytes = _owner.Span;
+        var offsets = bytes[(int)NumBytes..].Cast<Char8, int>();
+
+        offsets[(int)Count] = _written;
+        str.CopyTo(bytes[_written..]);
+        _written += str.Length;
+        bytes[_written++] = 0;
         Count++;
     }
 
