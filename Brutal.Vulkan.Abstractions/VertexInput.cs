@@ -1,5 +1,7 @@
 using System.Collections.Concurrent;
 using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace Brutal.VulkanApi.Abstractions;
 
@@ -483,12 +485,8 @@ public class VertexInput
             return AddBinding(binding, typeInfo.GetTotalSize(Behavior.None), vertexInputRate);
         }
 
-        var size = 0;
-
-        foreach (var field in GetFieldLayout(typeof(T)))
-            size += (int)field.Info.GetTotalSize(field.Mode);
-
-        return AddBinding(binding, ByteSize.Of(size), vertexInputRate);
+        // The stride is the runtime size of the struct, including any alignment padding
+        return AddBinding(binding, ByteSize.Of(Unsafe.SizeOf<T>()), vertexInputRate);
     }
 
     /// <summary>
@@ -597,12 +595,12 @@ public class VertexInput
     public VertexInput AddAttributes<T>(int firstLocation, int binding, ByteSize firstOffset)
     {
         var location = firstLocation;
-        var offset = firstOffset;
 
         foreach (var field in GetFieldLayout(typeof(T)))
         {
             var info = field.Info;
             var format = field.FormatOverride != VkFormat.Undefined ? field.FormatOverride : info.GetFormat(field.Mode);
+            var offset = firstOffset + field.Offset;
 
             for (var j = 0; j < info.Num; ++j)
             {
@@ -618,7 +616,12 @@ public class VertexInput
     /// <summary>
     /// Cached per-type field layout so reflection runs once per vertex type instead of on every call.
     /// </summary>
-    private readonly record struct FieldLayout(AttributeInfo Info, Behavior Mode, VkFormat FormatOverride);
+    private readonly record struct FieldLayout(
+        AttributeInfo Info,
+        Behavior Mode,
+        VkFormat FormatOverride,
+        ByteSize Offset
+    );
 
     private static readonly ConcurrentDictionary<Type, FieldLayout[]> LayoutCache = new();
 
@@ -643,7 +646,9 @@ public class VertexInput
                             Attribute.GetCustomAttribute(fields[i], typeof(VertexFormatAttribute))
                             as VertexFormatAttribute
                         )?.Format ?? VkFormat.Undefined;
-                    layout[i] = new FieldLayout(info, mode, formatOverride);
+                    // Take the offset from the struct layout so alignment padding between fields is respected
+                    var offset = (ByteSize)Marshal.OffsetOf(t, fields[i].Name);
+                    layout[i] = new FieldLayout(info, mode, formatOverride, offset);
                 }
                 return layout;
             }
