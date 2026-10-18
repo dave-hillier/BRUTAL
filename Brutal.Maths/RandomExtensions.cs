@@ -43,7 +43,12 @@ public static class RandomExtensions
         if (minValue > maxValue)
             throw new ArgumentOutOfRangeException(nameof(minValue), @"minValue must be less than or equal to maxValue");
 
-        return random.NextSingle() * (maxValue - minValue) + minValue;
+        var value = random.NextSingle() * (maxValue - minValue) + minValue;
+        // Rounding can land on maxValue; step back below it to keep the upper bound exclusive
+        if (value >= maxValue && minValue < maxValue)
+            value = float.BitDecrement(maxValue);
+
+        return value;
     }
 
     /// <inheritdoc cref="NextSingle(System.Random, float, float)" />
@@ -52,7 +57,12 @@ public static class RandomExtensions
         if (minValue > maxValue)
             throw new ArgumentOutOfRangeException(nameof(minValue), @"minValue must be less than or equal to maxValue");
 
-        return random.NextDouble() * (maxValue - minValue) + minValue;
+        var value = random.NextDouble() * (maxValue - minValue) + minValue;
+        // Rounding can land on maxValue; step back below it to keep the upper bound exclusive
+        if (value >= maxValue && minValue < maxValue)
+            value = double.BitDecrement(maxValue);
+
+        return value;
     }
 
     /// <summary>
