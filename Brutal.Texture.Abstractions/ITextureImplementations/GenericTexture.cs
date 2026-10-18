@@ -194,6 +194,9 @@ public class GenericTexture : ITexture
         )
         {
             var createInfo = MakeInfo(format, extent);
+            createInfo.LevelCount = levels;
+            createInfo.LayerCount = layers;
+            createInfo.FaceCount = faces;
             createInfo.IsArray = layers > 1;
             createInfo.IsCubemap = faces == 6;
 
@@ -203,25 +206,25 @@ public class GenericTexture : ITexture
 
             var memAllocSize = ByteSize.Zero;
             var offset = ByteSize.Zero;
-            var ranges = new CreateImageRange[levels];
+            // One range per image, in the level, layer, face order the constructor expects.
+            var ranges = new CreateImageRange[levels * layers * faces];
+            var index = 0;
             for (var level = 0; level < levels; ++level)
             {
-                var bytesForLevel = (ByteSize)
-                    Math.Max(
-                        1,
-                        (createInfo.Extent.X >> level)
-                            * Math.Max(1, createInfo.Extent.Y >> level)
-                            * descriptor.BlockSizeInBytes
-                    );
+                var rowPitch = (ByteSize)(Math.Max(1, createInfo.Extent.X >> level) * descriptor.BlockSizeInBytes);
+                var bytesForLevel = rowPitch * Math.Max(1, createInfo.Extent.Y >> level);
 
-                memAllocSize += bytesForLevel;
-                ranges[level] = new()
+                for (var image = 0; image < layers * faces; ++image)
                 {
-                    StartByteOffset = offset,
-                    ByteLength = bytesForLevel,
-                    RowPitch = bytesForLevel,
-                };
-                offset += bytesForLevel;
+                    memAllocSize += bytesForLevel;
+                    ranges[index++] = new()
+                    {
+                        StartByteOffset = offset,
+                        ByteLength = bytesForLevel,
+                        RowPitch = rowPitch,
+                    };
+                    offset += bytesForLevel;
+                }
             }
 
             return new GenericTexture(createInfo, memAllocSize, ranges);
