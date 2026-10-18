@@ -27,6 +27,23 @@ public class JobRunnerTests : IClassFixture<JobRunnerCrashReproFixture>
         public void Run() { }
     }
 
+    private sealed class SlowThrowingJob(Exception exception) : IJob
+    {
+        public void Run()
+        {
+            Thread.Sleep(300);
+            throw exception;
+        }
+    }
+
+    private sealed class CountingJob : IJob
+    {
+        private int _runCount;
+        public int RunCount => Volatile.Read(ref _runCount);
+
+        public void Run() => Interlocked.Increment(ref _runCount);
+    }
+
     [Fact]
     public void ExecuteJobs_WhenAJobThrows_ProcessSurvives()
     {
@@ -57,6 +74,49 @@ public class JobRunnerTests : IClassFixture<JobRunnerCrashReproFixture>
             reportedSuccess && remainingJobSkipped,
             $"Runner reported Success although the job queued after the throwing job never ran.\nstdout:\n{run.StdOut}"
         );
+    }
+
+    [Fact]
+    public void FaultedRun_ReportsFaultedAndException_AndDoesNotContributeToMetrics()
+    {
+        var runner = new JobRunner();
+        var thrown = new InvalidOperationException("job failed on purpose");
+        var jobAfterThrow = new CountingJob();
+
+        // First run: a ~300ms job that throws, followed by one that must be skipped.
+        runner.Queue(new SlowThrowingJob(thrown));
+        runner.Queue(jobAfterThrow);
+        ExecutionResult? faultedResult = null;
+        Exception? exceptionSeenByCallback = null;
+        runner.ExecuteJobs(
+            (r, result, _) =>
+            {
+                faultedResult = result;
+                exceptionSeenByCallback = r.LastException;
+            }
+        );
+        runner.Wait();
+
+        Assert.Equal(ExecutionResult.Faulted, faultedResult);
+        Assert.Same(thrown, exceptionSeenByCallback);
+        Assert.Same(thrown, runner.LastException);
+        Assert.Equal(0, jobAfterThrow.RunCount);
+        var faultedMetrics = runner.GetMetrics();
+        Assert.Equal(0, faultedMetrics.LastTickTimeMillis);
+        Assert.Equal(0, faultedMetrics.MaxTickTimeMillis);
+        Assert.Equal(0, faultedMetrics.AverageTickTimeMillis);
+
+        // Second run: a trivially fast successful job.
+        ExecutionResult? secondResult = null;
+        runner.Queue(new NoopJob());
+        runner.ExecuteJobs((_, result, _) => secondResult = result);
+        runner.Wait();
+
+        Assert.Equal(ExecutionResult.Success, secondResult);
+        Assert.Null(runner.LastException);
+        var metrics = runner.GetMetrics();
+        Assert.True(metrics.MaxTickTimeMillis < 150, $"MaxTickTimeMillis was {metrics.MaxTickTimeMillis}");
+        Assert.True(metrics.AverageTickTimeMillis < 150, $"AverageTickTimeMillis was {metrics.AverageTickTimeMillis}");
     }
 
     [Fact]
@@ -131,7 +191,9 @@ public sealed class JobRunnerCrashReproFixture
         var projectDir = Path.GetFullPath(
             Path.Combine(ThisFileDirectory(), "..", "Brutal.Concurrency.Tests.CrashRepro")
         );
-        var artifacts = Path.Combine(Path.GetTempPath(), "brutal-tests", "jobrunner-crash-repro");
+        // Build under this test assembly's own output directory, not a machine-wide temp path, so that concurrent
+        // test runs from different checkouts never build into, or execute, each other's helper binaries.
+        var artifacts = Path.Combine(AppContext.BaseDirectory, "jobrunner-crash-repro");
 
         var build = Execute(
             "dotnet",
