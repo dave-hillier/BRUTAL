@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="Brutal.Concurrency.Tests/Brutal.Concurrency.Tests.csproj" />
+  <Project Path="Brutal.Concurrency/Brutal.Concurrency.csproj" />
+  <Project Path="Brutal.Core/Brutal.Core.csproj" />
+</Solution>
