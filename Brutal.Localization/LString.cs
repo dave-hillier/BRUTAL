@@ -103,7 +103,8 @@ public partial class LString
             var templateReplacementIndex = isInitialBuild
                 ? replacementCount
                 : GetTemplateStringReplacementIndex(
-                    _localizedString.AsSpan()[matchPos..(matchPos + match.Length)]
+                    _localizedString.AsSpan()[matchPos..(matchPos + match.Length)],
+                    replacementCount
                 );
 
             _literalCharCount += matchPos - nextPossibleLiteralStart;
@@ -140,7 +141,10 @@ public partial class LString
             nextPossibleLiteralStart == 0 ? _localizedString.Length : nextPossibleLiteralStart;
     }
 
-    private ushort GetTemplateStringReplacementIndex(ReadOnlySpan<char> replacementText)
+    private ushort GetTemplateStringReplacementIndex(
+        ReadOnlySpan<char> replacementText,
+        ushort assignedCount
+    )
     {
         for (
             ushort existingReplacementIndex = 0;
@@ -151,10 +155,25 @@ public partial class LString
             var templateReplacement = Template.AsSpan()[
                 _replacements[existingReplacementIndex].TemplateRange
             ];
-            if (templateReplacement.SequenceEqual(replacementText))
+            if (
+                templateReplacement.SequenceEqual(replacementText)
+                && !IsTemplateReplacementIndexAssigned(existingReplacementIndex, assignedCount)
+            )
                 return existingReplacementIndex;
         }
         throw UnknownReplacementVariableException(Template, replacementText);
+    }
+
+    // Skipping assigned indices maps the nth occurrence of a repeated variable to its nth template occurrence
+    private bool IsTemplateReplacementIndexAssigned(
+        ushort templateReplacementIndex,
+        ushort assignedCount
+    )
+    {
+        for (var i = 0; i < assignedCount; ++i)
+            if (_replacements[i].TemplateReplacementIndex == templateReplacementIndex)
+                return true;
+        return false;
     }
 
     private static ArgumentException UnknownReplacementVariableException(
