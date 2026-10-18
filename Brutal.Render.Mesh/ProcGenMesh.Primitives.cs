@@ -16,10 +16,11 @@ public static partial class ProcGenMeshLibrary
     /// <param name="up">Outputs up direction</param>
     private static void GetRightUp(float3 normal, out float3 right, out float3 up)
     {
-        right = float3.Cross(normal, GlobalUp);
         var dot = float3.Dot(normal, GlobalUp);
         if (MathF.Abs(dot) > 0.9999f)
             right = GlobalRight * MathF.Sign(dot);
+        else
+            right = float3.NormalizeOrZero(float3.Cross(normal, GlobalUp));
         up = float3.Cross(right, normal);
     }
 
