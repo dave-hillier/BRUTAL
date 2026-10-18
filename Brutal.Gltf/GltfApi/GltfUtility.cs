@@ -210,8 +210,10 @@ public static class GltfUtility
                 return ReadBinaryChunk(binaryReader, CHUNKBIN);
             }
         }
-        // Load external reference
-        return File.ReadAllBytes(Path.Combine(Path.GetDirectoryName(baseFilePath) ?? "", uri));
+        // Load external reference (relative URIs are percent-encoded)
+        return File.ReadAllBytes(
+            Path.Combine(Path.GetDirectoryName(baseFilePath) ?? "", Uri.UnescapeDataString(uri))
+        );
     }
 
     private static byte[] LoadBinaryBufferUnchecked(Buffer buffer, string baseFilePath)
@@ -845,7 +847,7 @@ public static class GltfUtility
                 {
                     if (!image.Uri.StartsWith("data:"))
                     {
-                        var sourceFilePath = Path.Combine(inputDirectoryPath, image.Uri);
+                        var sourceFilePath = Path.Combine(inputDirectoryPath, Uri.UnescapeDataString(image.Uri));
                         var fileName = $"{inputFilePath}_image{index}.bin";
 
                         if (File.Exists(sourceFilePath))
@@ -994,7 +996,7 @@ public static class GltfUtility
                 var buffer = model.Buffers[index];
                 if (!buffer.Uri.StartsWith("data:"))
                 {
-                    var sourceFilePath = Path.Combine(inputDirectoryPath, buffer.Uri);
+                    var sourceFilePath = Path.Combine(inputDirectoryPath, Uri.UnescapeDataString(buffer.Uri));
                     var fileName = $"{inputFileName}{index}.bin";
 
                     if (File.Exists(sourceFilePath))

@@ -222,7 +222,7 @@ public class GltfLoader : IGltfCachedLoader, IDisposable
             return TextureLoader.LoadFromMemory(imageData, TextureLoader.GetFormatType(image.Uri), loadInfo);
         }
         return TextureLoader.LoadFromFile(
-            Path.Combine(Path.GetDirectoryName(FilePath) ?? string.Empty, image.Uri),
+            Path.Combine(Path.GetDirectoryName(FilePath) ?? string.Empty, Uri.UnescapeDataString(image.Uri)),
             loadInfo
         );
     }
