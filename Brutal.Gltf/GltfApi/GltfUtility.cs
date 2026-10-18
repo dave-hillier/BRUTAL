@@ -860,7 +860,7 @@ public static class GltfUtility
                 else if (image.BufferView.HasValue)
                 {
                     var bufferView = model.BufferViews[image.BufferView.Value];
-                    if (bufferView.Buffer == 0)
+                    if (binBuffer != null && bufferView.Buffer == 0)
                     {
                         imageBufferViewIndices.Add(image.BufferView.Value);
 
@@ -900,7 +900,7 @@ public static class GltfUtility
                     if (!imageBufferViewIndices.Any(imageIndex => imageIndex == index))
                     {
                         var bufferView = model.BufferViews[index];
-                        if (bufferView.Buffer == 0)
+                        if (binBuffer != null && bufferView.Buffer == 0)
                         {
                             fileStream.Align(4);
                             var fileStreamPosition = fileStream.Position;
@@ -989,10 +989,10 @@ public static class GltfUtility
 
         if (model.Buffers != null)
         {
-            for (var index = 1; index < model.Buffers.Length; index++)
+            for (var index = 0; index < model.Buffers.Length; index++)
             {
                 var buffer = model.Buffers[index];
-                if (!buffer.Uri.StartsWith("data:"))
+                if (buffer != binBuffer && !buffer.Uri.StartsWith("data:"))
                 {
                     var sourceFilePath = Path.Combine(inputDirectoryPath, buffer.Uri);
                     var fileName = $"{inputFileName}{index}.bin";
