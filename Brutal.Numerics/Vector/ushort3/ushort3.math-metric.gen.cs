@@ -14,7 +14,7 @@ public partial struct ushort3
 
     /// <inheritdoc />
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public readonly int LengthSquared()
+    public readonly long LengthSquared()
     {
         return Dot(this, this);
     }
@@ -28,15 +28,15 @@ public partial struct ushort3
 
     /// <inheritdoc cref="Vector3.DistanceSquared" />
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static int DistanceSquared(ushort3 a, ushort3 b)
+    public static long DistanceSquared(ushort3 a, ushort3 b)
     {
-        return (a.X - b.X) * (a.X - b.X) + (a.Y - b.Y) * (a.Y - b.Y) + (a.Z - b.Z) * (a.Z - b.Z);
+        return ((long)a.X - b.X) * ((long)a.X - b.X) + ((long)a.Y - b.Y) * ((long)a.Y - b.Y) + ((long)a.Z - b.Z) * ((long)a.Z - b.Z);
     }
 
     /// <inheritdoc cref="Vector3.Dot" />
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static int Dot(ushort3 a, ushort3 b)
+    public static long Dot(ushort3 a, ushort3 b)
     {
-        return a.X * b.X + a.Y * b.Y + a.Z * b.Z;
+        return (long)a.X * b.X + (long)a.Y * b.Y + (long)a.Z * b.Z;
     }
 }
