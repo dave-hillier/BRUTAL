@@ -92,5 +92,12 @@ public readonly ref struct NativeStrideSpan(Ptr inData, ElementCount inLength, B
         return new Span<T>(Ptr.Cast<T>(), Length);
     }
 
-    public NativeStrideSpan this[Range start] => Slice(start.Start.Value, start.End.Value - start.Start.Value);
+    public NativeStrideSpan this[Range start]
+    {
+        get
+        {
+            var (offset, length) = start.GetOffsetAndLength(Length);
+            return Slice(offset, length);
+        }
+    }
 }
