@@ -25,7 +25,7 @@ public class Utf8PathTests : IClassFixture<Utf8PathCrashReproFixture>
         var run = _crashRepro.Run("GetDirectoryName", LongPathByteLength);
 
         AssertSurvived(run);
-        Assert.Contains($"SURVIVED {LongPathByteLength - 2}", run.StdOut);
+        Assert.Equal($"SURVIVED {LongPathByteLength - 2}", run.StdOut.Trim());
     }
 
     [Fact]
@@ -34,7 +34,7 @@ public class Utf8PathTests : IClassFixture<Utf8PathCrashReproFixture>
         var run = _crashRepro.Run("GetFileName", LongPathByteLength);
 
         AssertSurvived(run);
-        Assert.Contains("SURVIVED 1", run.StdOut);
+        Assert.Equal("SURVIVED 1", run.StdOut.Trim());
     }
 
     [Fact]
@@ -43,7 +43,7 @@ public class Utf8PathTests : IClassFixture<Utf8PathCrashReproFixture>
         var run = _crashRepro.Run("IsPathFullyQualified", LongPathByteLength);
 
         AssertSurvived(run);
-        Assert.Contains("SURVIVED False", run.StdOut);
+        Assert.Equal("SURVIVED False", run.StdOut.Trim());
     }
 
     [Fact]
@@ -102,7 +102,9 @@ public sealed class Utf8PathCrashReproFixture
         var projectDir = Path.GetFullPath(
             Path.Combine(ThisFileDirectory(), "..", "Brutal.Strings.Tests.CrashRepro")
         );
-        var artifacts = Path.Combine(Path.GetTempPath(), "brutal-tests", "utf8path-crash-repro");
+        // Build under this test assembly's own output directory so concurrent runs from other checkouts or
+        // artifact paths never share (and race on) the helper's bin/obj.
+        var artifacts = Path.Combine(AppContext.BaseDirectory, "utf8path-crash-repro");
 
         var build = Execute(
             "dotnet",
