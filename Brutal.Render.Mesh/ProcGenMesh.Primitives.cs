@@ -482,7 +482,7 @@ public static partial class ProcGenMeshLibrary
 
                 nPtr[vIndex++] = prevNormal;
                 nPtr[vIndex++] = normal;
-                nPtr[vIndex++] = (prevNormal + normal) * 0.5f;
+                nPtr[vIndex++] = float3.Normalize(prevNormal + normal);
 
                 prevNormal = normal;
             }
