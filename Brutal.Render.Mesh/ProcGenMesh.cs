@@ -457,7 +457,7 @@ public static partial class ProcGenMeshLibrary
         for (var i = 0; i < count; i++)
         {
             var normal = normals[i];
-            if (normal.Y >= 1.0f)
+            if (float.Abs(normal.Y) >= 1.0f)
             {
                 tangents[i] = new float4(1.0f, 0.0f, 0.0f, 1.0f);
             }
