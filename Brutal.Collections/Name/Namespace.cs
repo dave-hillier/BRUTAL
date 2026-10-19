@@ -1,5 +1,4 @@
 using System.Diagnostics.CodeAnalysis;
-using CommunityToolkit.HighPerformance.Buffers;
 
 namespace Brutal.Collections;
 
@@ -15,13 +14,28 @@ public class Namespace<T>
     /// </summary>
     public static Namespace<T> Shared { get; } = new();
 
-    private readonly StringPool _pool = new();
+    // Names compare by reference, so interned strings must never be evicted
+    private readonly HashSet<string> _pool = new(StringComparer.Ordinal);
+    private readonly HashSet<string>.AlternateLookup<ReadOnlySpan<char>> _lookup;
+
+    /// <summary>
+    /// Create an empty pool
+    /// </summary>
+    public Namespace()
+    {
+        _lookup = _pool.GetAlternateLookup<ReadOnlySpan<char>>();
+    }
 
     internal string GetOrAdd(ReadOnlySpan<char> id)
     {
         lock (_lock)
         {
-            return _pool.GetOrAdd(id);
+            if (_lookup.TryGetValue(id, out var existing))
+                return existing;
+
+            var key = id.ToString();
+            _pool.Add(key);
+            return key;
         }
     }
 
@@ -32,9 +46,9 @@ public class Namespace<T>
     {
         lock (_lock)
         {
-            if (_pool.TryGet(id, out var key))
+            if (_lookup.TryGetValue(id, out var key))
             {
-                existing = new Name<T>(key);
+                existing = new Name<T>(key, this);
                 return true;
             }
 
@@ -50,7 +64,7 @@ public class Namespace<T>
     {
         lock (_lock)
         {
-            return _pool.TryGet(id, out _);
+            return _lookup.Contains(id);
         }
     }
 }
