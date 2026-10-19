@@ -12,6 +12,7 @@ public ref struct RefString8Array(ElementCount length, ByteSize numBytes) : IDis
     public ElementCount Length = length;
     public ByteSize NumBytes = numBytes;
     private bool _disposed = false;
+    private int _written;
 
     public RefString8Array(ReadOnlySpan<String16> strings)
         : this(strings.Length, GetTotalByteCount(strings))
@@ -33,6 +34,8 @@ public ref struct RefString8Array(ElementCount length, ByteSize numBytes) : IDis
         }
 
         Debug.Assert(written == (int)NumBytes);
+        Count = strings.Length;
+        _written = written;
     }
 
     public RefString8Array(ReadOnlySpan<String8> strings)
@@ -55,12 +58,16 @@ public ref struct RefString8Array(ElementCount length, ByteSize numBytes) : IDis
         }
 
         Debug.Assert(written == (int)NumBytes);
+        Count = strings.Length;
+        _written = written;
     }
 
     public unsafe Char8** CommitFixedRegion(Char8* fixedPointer)
     {
         if (_disposed)
             throw new ObjectDisposedException(nameof(RefString8Array));
+        if (Count != Length)
+            throw new InvalidOperationException($"Only {(int)Count} of {(int)Length} strings have been appended");
         Debug.Assert(fixedPointer == Unsafe.AsPointer(ref _owner.Span[0]));
 
         var bytes = new Span<Char8>(fixedPointer, _owner.Span.Length);
@@ -82,8 +89,16 @@ public ref struct RefString8Array(ElementCount length, ByteSize numBytes) : IDis
         if (Count == Length)
             throw new InvalidOperationException("Array is full");
 
-        _owner.Span[(int)(NumBytes + ByteSize.Of<nint>(Count))] = (Char8)str.Length;
-        str.CopyTo(_owner.Span[(int)(NumBytes + ByteSize.Of<nint>(Count) + 1)..]);
+        if (_written + str.Length + 1 > (int)NumBytes)
+            throw new InvalidOperationException("Not enough space for string");
+
+        var bytes = _owner.Span;
+        var offsets = bytes[(int)NumBytes..].Cast<Char8, int>();
+
+        offsets[(int)Count] = _written;
+        str.CopyTo(bytes[_written..]);
+        _written += str.Length;
+        bytes[_written++] = 0;
         Count++;
     }
 
