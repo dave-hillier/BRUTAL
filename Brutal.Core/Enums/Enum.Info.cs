@@ -28,9 +28,9 @@ public static class Enum<T>
 
         if (Count > 0)
         {
-            // values are already sorted
-            MinValue = Values[0];
-            MaxValue = Values[^1];
+            // values are sorted by unsigned magnitude, so negative values come last
+            MinValue = Values.Min();
+            MaxValue = Values.Max();
         }
     }
 
