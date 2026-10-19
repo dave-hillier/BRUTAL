@@ -350,9 +350,7 @@ public readonly record struct ByteSize(nuint Value)
         if (Bytes == 0)
             return "0 B";
 
-        var order = 0;
-        for (var remaining = Bytes; remaining >= 1024 && order < Suffixes.Length - 1; remaining /= 1024)
-            order++;
+        var order = Math.Min(BitOperations.Log2(Bytes) / 10, Suffixes.Length - 1);
 
         var value = Math.Round(Bytes / Math.Pow(1024, order), 2, MidpointRounding.AwayFromZero);
 
