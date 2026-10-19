@@ -1,4 +1,5 @@
-using System.Buffers;
+using System.Diagnostics;
+using System.Numerics;
 using System.Runtime.InteropServices;
 
 namespace Brutal.GltfApi;
@@ -10,11 +11,6 @@ public static partial class GltfLoaderExtensions
     private const int OffY = 4;
     private const int OffZ = 8;
     private const int OffW = 12;
-
-    // Per-element strides for common GLTF accessor types
-    private const int StrideFloat3 = 12; // vec3
-    private const int StrideFloat4 = 16; // vec4 / quaternion
-    private const int StrideMatrix = 64; // mat4
 
     // Byte offsets of each Mij within a row-major float4x4 (System.Numerics layout)
     //   Row 1:  M11= 0  M12= 4  M13= 8  M14=12
@@ -47,6 +43,7 @@ public static partial class GltfLoaderExtensions
     ///   <item>Node explicit matrix transforms (Z row and Z column negated)</item>
     ///   <item>Mesh vertex positions and normals (Z negated)</item>
     ///   <item>Mesh tangents (Z negated, handedness sign W negated)</item>
+    ///   <item>Morph target position, normal and tangent displacements (Z negated)</item>
     ///   <item>Index buffers (triangle winding reversed)</item>
     ///   <item>Skin inverse bind matrices (Z row and Z column negated)</item>
     ///   <item>Animation translation tracks (Z negated)</item>
@@ -54,6 +51,9 @@ public static partial class GltfLoaderExtensions
     /// </list>
     /// </para>
     /// </summary>
+    /// <exception cref="NotSupportedException">
+    /// A non-morph-target accessor is not FLOAT, or an index accessor is sparse. The model is left unchanged.
+    /// </exception>
     public static void FlipHandedness(this GltfLoader loader) => FlipZAxis(loader);
 
     /// <summary>
@@ -66,6 +66,7 @@ public static partial class GltfLoaderExtensions
     ///   <item>Node explicit matrix transforms (Z row and Z column negated)</item>
     ///   <item>Mesh vertex positions and normals (Z negated)</item>
     ///   <item>Mesh tangents (Z negated, handedness sign W negated)</item>
+    ///   <item>Morph target position, normal and tangent displacements (Z negated)</item>
     ///   <item>Index buffers (triangle winding reversed)</item>
     ///   <item>Skin inverse bind matrices (Z row and Z column negated)</item>
     ///   <item>Animation translation tracks (Z negated)</item>
@@ -73,6 +74,9 @@ public static partial class GltfLoaderExtensions
     /// </list>
     /// </para>
     /// </summary>
+    /// <exception cref="NotSupportedException">
+    /// A non-morph-target accessor is not FLOAT, or an index accessor is sparse. The model is left unchanged.
+    /// </exception>
     public static void FlipZAxis(this GltfLoader loader) =>
         FlipAxisImpl(loader, OffZ, OffX, OffY, [M31, M32, M34, M13, M23, M43]);
 
@@ -86,6 +90,7 @@ public static partial class GltfLoaderExtensions
     ///   <item>Node explicit matrix transforms (X row and X column negated)</item>
     ///   <item>Mesh vertex positions and normals (X negated)</item>
     ///   <item>Mesh tangents (X negated, handedness sign W negated)</item>
+    ///   <item>Morph target position, normal and tangent displacements (X negated)</item>
     ///   <item>Index buffers (triangle winding reversed)</item>
     ///   <item>Skin inverse bind matrices (X row and X column negated)</item>
     ///   <item>Animation translation tracks (X negated)</item>
@@ -93,6 +98,9 @@ public static partial class GltfLoaderExtensions
     /// </list>
     /// </para>
     /// </summary>
+    /// <exception cref="NotSupportedException">
+    /// A non-morph-target accessor is not FLOAT, or an index accessor is sparse. The model is left unchanged.
+    /// </exception>
     public static void FlipXAxis(this GltfLoader loader) =>
         FlipAxisImpl(loader, OffX, OffY, OffZ, [M12, M13, M14, M21, M31, M41]);
 
@@ -106,6 +114,7 @@ public static partial class GltfLoaderExtensions
     ///   <item>Node explicit matrix transforms (Y row and Y column negated)</item>
     ///   <item>Mesh vertex positions and normals (Y negated)</item>
     ///   <item>Mesh tangents (Y negated, handedness sign W negated)</item>
+    ///   <item>Morph target position, normal and tangent displacements (Y negated)</item>
     ///   <item>Index buffers (triangle winding reversed)</item>
     ///   <item>Skin inverse bind matrices (Y row and Y column negated)</item>
     ///   <item>Animation translation tracks (Y negated)</item>
@@ -113,6 +122,9 @@ public static partial class GltfLoaderExtensions
     /// </list>
     /// </para>
     /// </summary>
+    /// <exception cref="NotSupportedException">
+    /// A non-morph-target accessor is not FLOAT, or an index accessor is sparse. The model is left unchanged.
+    /// </exception>
     public static void FlipYAxis(this GltfLoader loader) =>
         FlipAxisImpl(loader, OffY, OffX, OffZ, [M21, M23, M24, M12, M32, M42]);
 
@@ -126,6 +138,7 @@ public static partial class GltfLoaderExtensions
     ///   <item>Node explicit matrix transforms (Y and Z rows and columns swapped)</item>
     ///   <item>Mesh vertex positions and normals (Y and Z swapped)</item>
     ///   <item>Mesh tangents (Y and Z swapped, handedness sign W negated)</item>
+    ///   <item>Morph target position, normal and tangent displacements (Y and Z swapped)</item>
     ///   <item>Index buffers (triangle winding reversed)</item>
     ///   <item>Skin inverse bind matrices (Y and Z rows and columns swapped)</item>
     ///   <item>Animation translation tracks (Y and Z swapped)</item>
@@ -133,6 +146,9 @@ public static partial class GltfLoaderExtensions
     /// </list>
     /// </para>
     /// </summary>
+    /// <exception cref="NotSupportedException">
+    /// A non-morph-target accessor is not FLOAT, or an index accessor is sparse. The model is left unchanged.
+    /// </exception>
     public static void SwapYZAxes(this GltfLoader loader) =>
         SwapAxesImpl(loader, OffY, OffZ, [M12, M13, M21, M31, M22, M33, M23, M32, M24, M34, M42, M43]);
 
@@ -146,6 +162,7 @@ public static partial class GltfLoaderExtensions
     ///   <item>Node explicit matrix transforms (X and Y rows and columns swapped)</item>
     ///   <item>Mesh vertex positions and normals (X and Y swapped)</item>
     ///   <item>Mesh tangents (X and Y swapped, handedness sign W negated)</item>
+    ///   <item>Morph target position, normal and tangent displacements (X and Y swapped)</item>
     ///   <item>Index buffers (triangle winding reversed)</item>
     ///   <item>Skin inverse bind matrices (X and Y rows and columns swapped)</item>
     ///   <item>Animation translation tracks (X and Y swapped)</item>
@@ -153,6 +170,9 @@ public static partial class GltfLoaderExtensions
     /// </list>
     /// </para>
     /// </summary>
+    /// <exception cref="NotSupportedException">
+    /// A non-morph-target accessor is not FLOAT, or an index accessor is sparse. The model is left unchanged.
+    /// </exception>
     public static void SwapXYAxes(this GltfLoader loader) =>
         SwapAxesImpl(loader, OffX, OffY, [M11, M22, M12, M21, M13, M23, M14, M24, M31, M32, M41, M42]);
 
@@ -166,6 +186,7 @@ public static partial class GltfLoaderExtensions
     ///   <item>Node explicit matrix transforms (X and Z rows and columns swapped)</item>
     ///   <item>Mesh vertex positions and normals (X and Z swapped)</item>
     ///   <item>Mesh tangents (X and Z swapped, handedness sign W negated)</item>
+    ///   <item>Morph target position, normal and tangent displacements (X and Z swapped)</item>
     ///   <item>Index buffers (triangle winding reversed)</item>
     ///   <item>Skin inverse bind matrices (X and Z rows and columns swapped)</item>
     ///   <item>Animation translation tracks (X and Z swapped)</item>
@@ -173,6 +194,9 @@ public static partial class GltfLoaderExtensions
     /// </list>
     /// </para>
     /// </summary>
+    /// <exception cref="NotSupportedException">
+    /// A non-morph-target accessor is not FLOAT, or an index accessor is sparse. The model is left unchanged.
+    /// </exception>
     public static void SwapXZAxes(this GltfLoader loader) =>
         SwapAxesImpl(loader, OffX, OffZ, [M11, M33, M12, M32, M13, M31, M14, M34, M21, M23, M41, M43]);
 
@@ -189,71 +213,311 @@ public static partial class GltfLoaderExtensions
     ///   <item>Node TRS translations (multiplied by scale)</item>
     ///   <item>Node explicit matrix transforms (translation row multiplied by scale)</item>
     ///   <item>Mesh vertex positions (multiplied by scale)</item>
+    ///   <item>Morph target position displacements (multiplied by scale)</item>
     ///   <item>Skin inverse bind matrices (translation row multiplied by scale)</item>
     ///   <item>Animation translation tracks (multiplied by scale)</item>
     /// </list>
     /// </para>
     /// </summary>
+    /// <remarks>Quantized morph target displacements are left unchanged.</remarks>
+    /// <exception cref="NotSupportedException">
+    /// A non-morph-target accessor is not FLOAT, or an index accessor is sparse. The model is left unchanged.
+    /// </exception>
     public static void Scale(this GltfLoader loader, float scale)
     {
-        var gltf = loader.GltfJson;
-        var processedAccessors = ArrayPool<bool>.Shared.Rent(gltf.Accessors.Length);
-        Array.Clear(processedAccessors, 0, gltf.Accessors.Length);
+        var edits = PlanAccessorEdits(
+            loader,
+            use =>
+                use
+                    is AccessorUse.Position
+                        or AccessorUse.TargetPosition
+                        or AccessorUse.InverseBindMatrices
+                        or AccessorUse.AnimationTranslation,
+            integerMorphTargets: false
+        );
 
         // Nodes: scale TRS translation and explicit matrix translation row
-        foreach (var node in gltf.Nodes)
+        foreach (var node in loader.GltfJson.Nodes ?? [])
         {
             var t = node.Translation;
             node.Translation = new float3(t.X * scale, t.Y * scale, t.Z * scale);
             node.Matrix = ScaleMatrixTranslation(node.Matrix, scale);
         }
 
-        // Mesh accessor data: positions only (normals and tangents are direction vectors)
-        foreach (var mesh in gltf.Meshes)
+        ApplyAccessorEdits(
+            loader,
+            edits,
+            (data, stride, _, use) =>
+            {
+                if (use == AccessorUse.InverseBindMatrices)
+                {
+                    ScaleMatrixTranslationArray(data, stride, scale);
+                    return;
+                }
+                ScaleComponent(data, stride, OffX, scale);
+                ScaleComponent(data, stride, OffY, scale);
+                ScaleComponent(data, stride, OffZ, scale);
+            }
+        );
+    }
+
+    #region Private helpers
+
+    private enum AccessorUse
+    {
+        Position,
+        Normal,
+        Tangent,
+        TargetPosition,
+        TargetNormal,
+        TargetTangent,
+        TriangleIndices,
+        InverseBindMatrices,
+        AnimationTranslation,
+        AnimationRotation,
+    }
+
+    // An accessor's initial elements, or the tightly packed values of its sparse block
+    private readonly record struct AccessorRegion(int BufferView, int ByteOffset, int Length, int Stride);
+
+    private sealed record AccessorEdit(
+        AccessorUse Use,
+        Accessor.ComponentTypeEnum ComponentType,
+        AccessorRegion[] Regions
+    );
+
+    private delegate void RegionEditor(
+        ReadOnlySpan<byte> data,
+        int stride,
+        Accessor.ComponentTypeEnum componentType,
+        AccessorUse use
+    );
+
+    private static IEnumerable<(int Accessor, AccessorUse Use)> AccessorUses(Gltf gltf)
+    {
+        foreach (var mesh in gltf.Meshes ?? [])
         foreach (var prim in mesh.Primitives)
         {
             if (prim == null)
                 continue;
 
-            if (prim.Attributes.TryGetValue("POSITION", out var posIdx) && AddToSet(processedAccessors, posIdx))
-            {
-                var span = loader.GetAccessorBufferSpan(posIdx);
-                ScaleComponent(span, StrideFloat3, OffX, scale);
-                ScaleComponent(span, StrideFloat3, OffY, scale);
-                ScaleComponent(span, StrideFloat3, OffZ, scale);
-            }
+            if (prim.Attributes.TryGetValue("POSITION", out var posIdx))
+                yield return (posIdx, AccessorUse.Position);
+            if (prim.Attributes.TryGetValue("NORMAL", out var normIdx))
+                yield return (normIdx, AccessorUse.Normal);
+            if (prim.Attributes.TryGetValue("TANGENT", out var tangIdx))
+                yield return (tangIdx, AccessorUse.Tangent);
+
+            if (prim.Targets != null)
+                foreach (var target in prim.Targets)
+                {
+                    if (target.TryGetValue("POSITION", out var targetPosIdx))
+                        yield return (targetPosIdx, AccessorUse.TargetPosition);
+                    if (target.TryGetValue("NORMAL", out var targetNormIdx))
+                        yield return (targetNormIdx, AccessorUse.TargetNormal);
+                    if (target.TryGetValue("TANGENT", out var targetTangIdx))
+                        yield return (targetTangIdx, AccessorUse.TargetTangent);
+                }
+
+            // Only triangle lists have a winding that the index order encodes
+            if (prim.Mode == MeshPrimitive.ModeEnum.Triangles && prim.Indices is { } indicesIdx)
+                yield return (indicesIdx, AccessorUse.TriangleIndices);
         }
 
-        // Skin inverse bind matrices: translation row only
         if (gltf.Skins != null)
             foreach (var skin in gltf.Skins)
-                if (skin.InverseBindMatrices.HasValue && AddToSet(processedAccessors, skin.InverseBindMatrices.Value))
-                    ScaleMatrixTranslationArray(loader.GetAccessorBufferSpan(skin.InverseBindMatrices.Value), scale);
+                if (skin.InverseBindMatrices is { } ibmIdx)
+                    yield return (ibmIdx, AccessorUse.InverseBindMatrices);
 
-        // Animation translation tracks
         if (gltf.Animations != null)
             foreach (var anim in gltf.Animations)
             foreach (var channel in anim.Channels)
             {
                 if (channel.Target.Node == null)
                     continue;
-                var sampler = anim.Samplers[channel.Sampler];
-                if (
-                    channel.Target.Path == AnimationChannelTarget.PathEnum.Translation
-                    && AddToSet(processedAccessors, sampler.Output)
-                )
-                {
-                    var span = loader.GetAccessorBufferSpan(sampler.Output);
-                    ScaleComponent(span, StrideFloat3, OffX, scale);
-                    ScaleComponent(span, StrideFloat3, OffY, scale);
-                    ScaleComponent(span, StrideFloat3, OffZ, scale);
-                }
+                var output = anim.Samplers[channel.Sampler].Output;
+                if (channel.Target.Path == AnimationChannelTarget.PathEnum.Translation)
+                    yield return (output, AccessorUse.AnimationTranslation);
+                else if (channel.Target.Path == AnimationChannelTarget.PathEnum.Rotation)
+                    yield return (output, AccessorUse.AnimationRotation);
             }
-
-        ArrayPool<bool>.Shared.Return(processedAccessors);
     }
 
-    #region Private helpers
+    // Validates every accessor up front so an unsupported one throws before anything changes.
+    // Non-float morph targets are skipped, except BYTE/SHORT (KHR_mesh_quantization) when integerMorphTargets is set.
+    private static List<AccessorEdit> PlanAccessorEdits(
+        GltfLoader loader,
+        Func<AccessorUse, bool> isTransformed,
+        bool integerMorphTargets
+    )
+    {
+        var accessors = loader.GltfJson.Accessors ?? [];
+        var visited = new HashSet<int>();
+        var edits = new List<AccessorEdit>();
+        foreach (var (index, use) in AccessorUses(loader.GltfJson))
+        {
+            if (!isTransformed(use) || !visited.Add(index))
+                continue;
+
+            var accessor = accessors[index];
+            var componentType = accessor.ComponentType;
+            if (use == AccessorUse.TriangleIndices)
+            {
+                // Reordering indices would also need the sparse indices remapped and re-sorted
+                if (accessor.BufferView is not { } bufferView || accessor.Sparse != null)
+                    throw new NotSupportedException(
+                        $"Accessor {index} is sparse; sparse index accessors cannot be transformed"
+                    );
+                var elementSize = (int)accessor.ElementSize();
+                edits.Add(
+                    new AccessorEdit(
+                        use,
+                        componentType,
+                        [Region(loader, bufferView, accessor.ByteOffset, accessor.Count, elementSize, elementSize)]
+                    )
+                );
+                continue;
+            }
+
+            if (componentType != Accessor.ComponentTypeEnum.Float)
+            {
+                var isMorphTarget =
+                    use is AccessorUse.TargetPosition or AccessorUse.TargetNormal or AccessorUse.TargetTangent;
+                if (!isMorphTarget)
+                    throw new NotSupportedException(
+                        $"Accessor {index} has component type {componentType}; only float accessors can be transformed"
+                    );
+                var isQuantized = componentType is Accessor.ComponentTypeEnum.Byte or Accessor.ComponentTypeEnum.Short;
+                if (!(integerMorphTargets && isQuantized))
+                    continue;
+            }
+
+            edits.Add(new AccessorEdit(use, componentType, AccessorRegions(loader, accessor)));
+        }
+        return edits;
+    }
+
+    // Transforms are per-element, so rewriting both the initial and the sparse values is sufficient.
+    // Without a bufferView the initial values are zeros, which no transform changes.
+    private static AccessorRegion[] AccessorRegions(GltfLoader loader, Accessor accessor)
+    {
+        var elementSize = (int)accessor.ElementSize();
+        var regions = new List<AccessorRegion>(2);
+        if (accessor.BufferView is { } bufferView)
+        {
+            var stride = loader.GltfJson.BufferViews[bufferView].ByteStride ?? elementSize;
+            regions.Add(Region(loader, bufferView, accessor.ByteOffset, accessor.Count, stride, elementSize));
+        }
+        if (accessor.Sparse is { } sparse)
+            regions.Add(
+                Region(loader, sparse.Values.BufferView, sparse.Values.ByteOffset, sparse.Count, elementSize, elementSize)
+            );
+        return regions.ToArray();
+    }
+
+    private static AccessorRegion Region(
+        GltfLoader loader,
+        int bufferView,
+        int byteOffset,
+        int count,
+        int stride,
+        int elementSize
+    )
+    {
+        // The last element occupies only elementSize bytes: an interleaved view may end right after it
+        var length = count == 0 ? 0 : (count - 1) * stride + elementSize;
+        // Rejects out-of-range data before anything has changed
+        _ = loader.GetBufferView(bufferView).Slice(byteOffset, length);
+        return new AccessorRegion(bufferView, byteOffset, length, stride);
+    }
+
+    private static void ApplyAccessorEdits(GltfLoader loader, List<AccessorEdit> edits, RegionEditor edit)
+    {
+        foreach (var accessorEdit in edits)
+        foreach (var region in accessorEdit.Regions)
+            edit(
+                loader.GetBufferView(region.BufferView).Slice(region.ByteOffset, region.Length),
+                region.Stride,
+                accessorEdit.ComponentType,
+                accessorEdit.Use
+            );
+    }
+
+    private static void NegateVectorComponent(
+        ReadOnlySpan<byte> buffer,
+        int elementByteStride,
+        int floatComponentOffset,
+        Accessor.ComponentTypeEnum componentType
+    )
+    {
+        var component = floatComponentOffset / sizeof(float);
+        switch (componentType)
+        {
+            case Accessor.ComponentTypeEnum.Float:
+                NegateComponent(buffer, elementByteStride, floatComponentOffset);
+                break;
+            case Accessor.ComponentTypeEnum.Short:
+                NegateIntegerComponent<short>(buffer, elementByteStride, component * sizeof(short));
+                break;
+            case Accessor.ComponentTypeEnum.Byte:
+                NegateIntegerComponent<sbyte>(buffer, elementByteStride, component * sizeof(sbyte));
+                break;
+            default:
+                throw new UnreachableException($"Component type {componentType} was not rejected up front");
+        }
+    }
+
+    private static void SwapVectorComponents(
+        ReadOnlySpan<byte> buffer,
+        int elementByteStride,
+        int floatComponentOffsetA,
+        int floatComponentOffsetB,
+        Accessor.ComponentTypeEnum componentType
+    )
+    {
+        var componentA = floatComponentOffsetA / sizeof(float);
+        var componentB = floatComponentOffsetB / sizeof(float);
+        switch (componentType)
+        {
+            case Accessor.ComponentTypeEnum.Float:
+                SwapComponents(buffer, elementByteStride, floatComponentOffsetA, floatComponentOffsetB);
+                break;
+            case Accessor.ComponentTypeEnum.Short:
+                SwapComponents<short>(
+                    buffer,
+                    elementByteStride,
+                    componentA * sizeof(short),
+                    componentB * sizeof(short)
+                );
+                break;
+            case Accessor.ComponentTypeEnum.Byte:
+                SwapComponents<sbyte>(buffer, elementByteStride, componentA, componentB);
+                break;
+            default:
+                throw new UnreachableException($"Component type {componentType} was not rejected up front");
+        }
+    }
+
+    private static unsafe void NegateIntegerComponent<T>(
+        ReadOnlySpan<byte> buffer,
+        int elementByteStride,
+        int componentByteOffset
+    )
+        where T : unmanaged, IBinaryInteger<T>, ISignedNumber<T>, IMinMaxValue<T>
+    {
+        // MinValue saturates to MaxValue: both decode to -1.0 when normalized
+        fixed (byte* basePtr = &MemoryMarshal.GetReference(buffer))
+        {
+            var ptr = basePtr + componentByteOffset;
+            var end = basePtr + buffer.Length;
+            while (ptr < end)
+            {
+                var value = *(T*)ptr;
+                *(T*)ptr = value == T.MinValue ? T.MaxValue : -value;
+                ptr += elementByteStride;
+            }
+        }
+    }
 
     /// <summary>
     /// Iterates over a raw accessor buffer treating it as an array of fixed-size elements and
@@ -281,12 +545,20 @@ public static partial class GltfLoaderExtensions
     /// <summary>
     /// Iterates over a raw accessor buffer and swaps two float components within each element.
     /// </summary>
-    private static unsafe void SwapComponents(
+    private static void SwapComponents(
+        ReadOnlySpan<byte> buffer,
+        int elementByteStride,
+        int componentByteOffsetA,
+        int componentByteOffsetB
+    ) => SwapComponents<float>(buffer, elementByteStride, componentByteOffsetA, componentByteOffsetB);
+
+    private static unsafe void SwapComponents<T>(
         ReadOnlySpan<byte> buffer,
         int elementByteStride,
         int componentByteOffsetA,
         int componentByteOffsetB
     )
+        where T : unmanaged
     {
         fixed (byte* basePtr = &MemoryMarshal.GetReference(buffer))
         {
@@ -295,7 +567,7 @@ public static partial class GltfLoaderExtensions
             var end = basePtr + buffer.Length;
             while (ptrA < end)
             {
-                (*(float*)ptrA, *(float*)ptrB) = (*(float*)ptrB, *(float*)ptrA);
+                (*(T*)ptrA, *(T*)ptrB) = (*(T*)ptrB, *(T*)ptrA);
                 ptrA += elementByteStride;
                 ptrB += elementByteStride;
             }
@@ -329,11 +601,11 @@ public static partial class GltfLoaderExtensions
         return m;
     }
 
-    private static void ScaleMatrixTranslationArray(ReadOnlySpan<byte> buffer, float scale)
+    private static void ScaleMatrixTranslationArray(ReadOnlySpan<byte> buffer, int elementByteStride, float scale)
     {
-        ScaleComponent(buffer, StrideMatrix, M41, scale);
-        ScaleComponent(buffer, StrideMatrix, M42, scale);
-        ScaleComponent(buffer, StrideMatrix, M43, scale);
+        ScaleComponent(buffer, elementByteStride, M41, scale);
+        ScaleComponent(buffer, elementByteStride, M42, scale);
+        ScaleComponent(buffer, elementByteStride, M43, scale);
     }
 
     // Shared implementation for FlipXAxis / FlipYAxis / FlipZAxis.
@@ -349,76 +621,46 @@ public static partial class GltfLoaderExtensions
         ReadOnlySpan<int> matOffsets
     )
     {
-        var gltf = loader.GltfJson;
-        var processedAccessors = ArrayPool<bool>.Shared.Rent(gltf.Accessors.Length);
-        Array.Clear(processedAccessors, 0, gltf.Accessors.Length);
+        var edits = PlanAccessorEdits(loader, _ => true, integerMorphTargets: true);
 
         // Nodes: negate the relevant TRS translation component, rotate quaternion, flip matrix
-        foreach (var node in gltf.Nodes)
+        foreach (var node in loader.GltfJson.Nodes ?? [])
         {
             node.Translation = NegateFloat3Component(node.Translation, vecOff);
             node.Rotation = NegateQuatComponents(node.Rotation, quatOffA, quatOffB);
             node.Matrix = NegateMatrixElements(node.Matrix, matOffsets);
         }
 
-        // Mesh accessor data: positions, normals, tangents, index winding
-        foreach (var mesh in gltf.Meshes)
-        foreach (var prim in mesh.Primitives)
-        {
-            if (prim == null)
-                continue;
-
-            if (prim.Attributes.TryGetValue("POSITION", out var posIdx) && AddToSet(processedAccessors, posIdx))
-                NegateComponent(loader.GetAccessorBufferSpan(posIdx), StrideFloat3, vecOff);
-
-            if (prim.Attributes.TryGetValue("NORMAL", out var normIdx) && AddToSet(processedAccessors, normIdx))
-                NegateComponent(loader.GetAccessorBufferSpan(normIdx), StrideFloat3, vecOff);
-
-            if (prim.Attributes.TryGetValue("TANGENT", out var tangIdx) && AddToSet(processedAccessors, tangIdx))
+        var matrixOffsets = matOffsets.ToArray();
+        ApplyAccessorEdits(
+            loader,
+            edits,
+            (data, stride, componentType, use) =>
             {
-                // Negate the axis component and the handedness sign W: reflecting one axis flips
-                // the tangent frame orientation
-                NegateComponent(loader.GetAccessorBufferSpan(tangIdx), StrideFloat4, vecOff);
-                NegateComponent(loader.GetAccessorBufferSpan(tangIdx), StrideFloat4, OffW);
-            }
-
-            if (prim.Indices.HasValue && AddToSet(processedAccessors, prim.Indices.Value))
-                FlipTriangleWinding(
-                    loader.GetAccessorBufferSpan(prim.Indices.Value),
-                    gltf.Accessors[prim.Indices.Value].ComponentType
-                );
-        }
-
-        // Skin inverse bind matrices
-        if (gltf.Skins != null)
-            foreach (var skin in gltf.Skins)
-                if (skin.InverseBindMatrices.HasValue && AddToSet(processedAccessors, skin.InverseBindMatrices.Value))
-                    NegateMatrixElementsArray(loader.GetAccessorBufferSpan(skin.InverseBindMatrices.Value), matOffsets);
-
-        // Animation translation and rotation tracks
-        if (gltf.Animations != null)
-            foreach (var anim in gltf.Animations)
-            foreach (var channel in anim.Channels)
-            {
-                if (channel.Target.Node == null)
-                    continue;
-                var sampler = anim.Samplers[channel.Sampler];
-                if (
-                    channel.Target.Path == AnimationChannelTarget.PathEnum.Translation
-                    && AddToSet(processedAccessors, sampler.Output)
-                )
-                    NegateComponent(loader.GetAccessorBufferSpan(sampler.Output), StrideFloat3, vecOff);
-                else if (
-                    channel.Target.Path == AnimationChannelTarget.PathEnum.Rotation
-                    && AddToSet(processedAccessors, sampler.Output)
-                )
+                switch (use)
                 {
-                    NegateComponent(loader.GetAccessorBufferSpan(sampler.Output), StrideFloat4, quatOffA);
-                    NegateComponent(loader.GetAccessorBufferSpan(sampler.Output), StrideFloat4, quatOffB);
+                    case AccessorUse.Tangent:
+                        // Negate the handedness sign W: reflecting one axis flips the tangent frame
+                        NegateComponent(data, stride, vecOff);
+                        NegateComponent(data, stride, OffW);
+                        break;
+                    case AccessorUse.TriangleIndices:
+                        FlipTriangleWinding(data, componentType);
+                        break;
+                    case AccessorUse.InverseBindMatrices:
+                        NegateMatrixElementsArray(data, stride, matrixOffsets);
+                        break;
+                    case AccessorUse.AnimationRotation:
+                        NegateComponent(data, stride, quatOffA);
+                        NegateComponent(data, stride, quatOffB);
+                        break;
+                    default:
+                        // Target tangents are VEC3 deltas with no handedness sign
+                        NegateVectorComponent(data, stride, vecOff, componentType);
+                        break;
                 }
             }
-
-        ArrayPool<bool>.Shared.Return(processedAccessors);
+        );
     }
 
     // Negates the float3 component at the given byte offset (OffX / OffY / OffZ).
@@ -450,10 +692,14 @@ public static partial class GltfLoaderExtensions
         return m;
     }
 
-    private static void NegateMatrixElementsArray(ReadOnlySpan<byte> buffer, ReadOnlySpan<int> byteOffsets)
+    private static void NegateMatrixElementsArray(
+        ReadOnlySpan<byte> buffer,
+        int elementByteStride,
+        ReadOnlySpan<int> byteOffsets
+    )
     {
         foreach (var off in byteOffsets)
-            NegateComponent(buffer, StrideMatrix, off);
+            NegateComponent(buffer, elementByteStride, off);
     }
 
     // Shared implementation for SwapXYAxes / SwapXZAxes / SwapYZAxes.
@@ -463,78 +709,44 @@ public static partial class GltfLoaderExtensions
     //                        Encodes P*mat*P for the corresponding axis permutation P.
     private static void SwapAxesImpl(GltfLoader loader, int vecOffA, int vecOffB, ReadOnlySpan<int> matSwapPairs)
     {
-        var gltf = loader.GltfJson;
-        var processedAccessors = ArrayPool<bool>.Shared.Rent(gltf.Accessors.Length);
-        Array.Clear(processedAccessors, 0, gltf.Accessors.Length);
+        var edits = PlanAccessorEdits(loader, _ => true, integerMorphTargets: true);
 
         // Nodes: swap the relevant TRS translation components, rotate quaternion, permute matrix
-        foreach (var node in gltf.Nodes)
+        foreach (var node in loader.GltfJson.Nodes ?? [])
         {
             node.Translation = SwapFloat3Components(node.Translation, vecOffA, vecOffB);
             node.Rotation = SwapQuatComponentsNegateW(node.Rotation, vecOffA, vecOffB);
             node.Matrix = SwapMatrixElements(node.Matrix, matSwapPairs);
         }
 
-        // Mesh accessor data: positions, normals, tangents, index winding
-        foreach (var mesh in gltf.Meshes)
-        foreach (var prim in mesh.Primitives)
-        {
-            if (prim == null)
-                continue;
-
-            if (prim.Attributes.TryGetValue("POSITION", out var posIdx) && AddToSet(processedAccessors, posIdx))
-                SwapComponents(loader.GetAccessorBufferSpan(posIdx), StrideFloat3, vecOffA, vecOffB);
-
-            if (prim.Attributes.TryGetValue("NORMAL", out var normIdx) && AddToSet(processedAccessors, normIdx))
-                SwapComponents(loader.GetAccessorBufferSpan(normIdx), StrideFloat3, vecOffA, vecOffB);
-
-            if (prim.Attributes.TryGetValue("TANGENT", out var tangIdx) && AddToSet(processedAccessors, tangIdx))
+        var matrixSwapPairs = matSwapPairs.ToArray();
+        ApplyAccessorEdits(
+            loader,
+            edits,
+            (data, stride, componentType, use) =>
             {
-                // Swap the two axis components; negate handedness sign W because any axis swap
-                // is a reflection (det = -1), which flips the tangent frame orientation
-                SwapComponents(loader.GetAccessorBufferSpan(tangIdx), StrideFloat4, vecOffA, vecOffB);
-                NegateComponent(loader.GetAccessorBufferSpan(tangIdx), StrideFloat4, OffW);
-            }
-
-            if (prim.Indices.HasValue && AddToSet(processedAccessors, prim.Indices.Value))
-                FlipTriangleWinding(
-                    loader.GetAccessorBufferSpan(prim.Indices.Value),
-                    gltf.Accessors[prim.Indices.Value].ComponentType
-                );
-        }
-
-        // Skin inverse bind matrices
-        if (gltf.Skins != null)
-            foreach (var skin in gltf.Skins)
-                if (skin.InverseBindMatrices.HasValue && AddToSet(processedAccessors, skin.InverseBindMatrices.Value))
-                    SwapMatrixElementsArray(loader.GetAccessorBufferSpan(skin.InverseBindMatrices.Value), matSwapPairs);
-
-        // Animation translation and rotation tracks
-        if (gltf.Animations != null)
-            foreach (var anim in gltf.Animations)
-            foreach (var channel in anim.Channels)
-            {
-                if (channel.Target.Node == null)
-                    continue;
-                var sampler = anim.Samplers[channel.Sampler];
-                if (
-                    channel.Target.Path == AnimationChannelTarget.PathEnum.Translation
-                    && AddToSet(processedAccessors, sampler.Output)
-                )
-                    SwapComponents(loader.GetAccessorBufferSpan(sampler.Output), StrideFloat3, vecOffA, vecOffB);
-                else if (
-                    channel.Target.Path == AnimationChannelTarget.PathEnum.Rotation
-                    && AddToSet(processedAccessors, sampler.Output)
-                )
+                switch (use)
                 {
-                    // GLTF stores quaternions as float4(X, Y, Z, W): swap the two imaginary
-                    // components and negate W (same reflection logic as the tangent handedness)
-                    SwapComponents(loader.GetAccessorBufferSpan(sampler.Output), StrideFloat4, vecOffA, vecOffB);
-                    NegateComponent(loader.GetAccessorBufferSpan(sampler.Output), StrideFloat4, OffW);
+                    case AccessorUse.Tangent:
+                    case AccessorUse.AnimationRotation:
+                        // Any axis swap is a reflection (det = -1): negate tangent handedness W and
+                        // quaternion W
+                        SwapComponents(data, stride, vecOffA, vecOffB);
+                        NegateComponent(data, stride, OffW);
+                        break;
+                    case AccessorUse.TriangleIndices:
+                        FlipTriangleWinding(data, componentType);
+                        break;
+                    case AccessorUse.InverseBindMatrices:
+                        SwapMatrixElementsArray(data, stride, matrixSwapPairs);
+                        break;
+                    default:
+                        // Target tangents are VEC3 deltas with no handedness sign
+                        SwapVectorComponents(data, stride, vecOffA, vecOffB, componentType);
+                        break;
                 }
             }
-
-        ArrayPool<bool>.Shared.Return(processedAccessors);
+        );
     }
 
     // Swaps the two float3 components at the given byte offsets (OffX / OffY / OffZ).
@@ -571,10 +783,14 @@ public static partial class GltfLoaderExtensions
         return m;
     }
 
-    private static void SwapMatrixElementsArray(ReadOnlySpan<byte> buffer, ReadOnlySpan<int> swapPairs)
+    private static void SwapMatrixElementsArray(
+        ReadOnlySpan<byte> buffer,
+        int elementByteStride,
+        ReadOnlySpan<int> swapPairs
+    )
     {
         for (var i = 0; i < swapPairs.Length; i += 2)
-            SwapComponents(buffer, StrideMatrix, swapPairs[i], swapPairs[i + 1]);
+            SwapComponents(buffer, elementByteStride, swapPairs[i], swapPairs[i + 1]);
     }
 
     /// <summary>Reverse triangle winding by swapping the second and third index of every triple.</summary>
@@ -607,14 +823,6 @@ public static partial class GltfLoaderExtensions
                 }
             }
         }
-    }
-
-    private static bool AddToSet(Span<bool> set, int index)
-    {
-        if (set[index])
-            return false;
-        set[index] = true;
-        return true;
     }
 
     #endregion
