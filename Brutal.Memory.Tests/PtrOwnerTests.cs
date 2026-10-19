@@ -3,10 +3,7 @@ using System.Runtime.InteropServices;
 namespace Brutal.Memory.Tests;
 
 /// <summary>
-/// Frees are observed with macOS malloc_size, which is defined to return 0 for a pointer the
-/// allocator does not own (including one that has been freed). The Linux and Windows equivalents
-/// (malloc_usable_size, _msize) are undefined behaviour on a freed pointer, so these tests are
-/// skipped elsewhere.
+/// macOS malloc_size returns 0 for a freed pointer; the Linux and Windows equivalents are undefined behaviour there.
 /// </summary>
 public sealed class MacOSFactAttribute : FactAttribute
 {
@@ -31,7 +28,6 @@ public unsafe class PtrOwnerTests
 
         owner.Reset();
 
-        // freed blocks report a size of 0
         Assert.Equal((nuint)0, malloc_size(old.Pointer));
     }
 
