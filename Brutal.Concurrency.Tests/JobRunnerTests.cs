@@ -61,8 +61,7 @@ public class JobRunnerTests : IClassFixture<JobRunnerCrashReproFixture>
     {
         var run = _crashRepro.Run();
 
-        // The completion callback runs from DoWork's finally block, even when the process is then torn down.
-        // Require the callback line so the test cannot pass vacuously if the callback never ran.
+        // Require the callback line so the test cannot pass vacuously.
         Assert.True(
             run.StdOut.Contains("COMPLETED result="),
             $"Completion callback was never invoked.\nstdout:\n{run.StdOut}\nstderr:\n{run.StdErr}"
@@ -83,7 +82,6 @@ public class JobRunnerTests : IClassFixture<JobRunnerCrashReproFixture>
         var thrown = new InvalidOperationException("job failed on purpose");
         var jobAfterThrow = new CountingJob();
 
-        // First run: a ~300ms job that throws, followed by one that must be skipped.
         runner.Queue(new SlowThrowingJob(thrown));
         runner.Queue(jobAfterThrow);
         ExecutionResult? faultedResult = null;
@@ -106,7 +104,6 @@ public class JobRunnerTests : IClassFixture<JobRunnerCrashReproFixture>
         Assert.Equal(0, faultedMetrics.MaxTickTimeMillis);
         Assert.Equal(0, faultedMetrics.AverageTickTimeMillis);
 
-        // Second run: a trivially fast successful job.
         ExecutionResult? secondResult = null;
         runner.Queue(new NoopJob());
         runner.ExecuteJobs((_, result, _) => secondResult = result);
@@ -126,7 +123,6 @@ public class JobRunnerTests : IClassFixture<JobRunnerCrashReproFixture>
         using var started = new ManualResetEventSlim();
         using var release = new ManualResetEventSlim();
 
-        // First run: a slow job followed by one that never runs because we abort.
         runner.Queue(new BlockingJob(started, release));
         runner.Queue(new NoopJob());
         ExecutionResult? firstResult = null;
@@ -138,14 +134,11 @@ public class JobRunnerTests : IClassFixture<JobRunnerCrashReproFixture>
         runner.Wait();
         Assert.Equal(ExecutionResult.Aborted, firstResult);
 
-        // Second run: a trivially fast successful job.
         runner.Queue(new NoopJob());
         runner.ExecuteJobs();
         runner.Wait();
 
         var metrics = runner.GetMetrics();
-        // RequestAbort documents "Metrics will not be updated", so the ~300ms aborted run must not
-        // show up in the max or the average of the next successful run.
         Assert.True(metrics.MaxTickTimeMillis < 150, $"MaxTickTimeMillis was {metrics.MaxTickTimeMillis}");
         Assert.True(metrics.AverageTickTimeMillis < 150, $"AverageTickTimeMillis was {metrics.AverageTickTimeMillis}");
     }
@@ -179,8 +172,7 @@ public class JobRunnerTests : IClassFixture<JobRunnerCrashReproFixture>
 public sealed record ProcessRun(int ExitCode, string StdOut, string StdErr);
 
 /// <summary>
-/// Builds Brutal.Concurrency.Tests.CrashRepro once per test class so it can be run out-of-process:
-/// an exception escaping a ThreadPool work item would otherwise terminate the test host.
+/// Builds Brutal.Concurrency.Tests.CrashRepro once per test class so it can be run out-of-process.
 /// </summary>
 public sealed class JobRunnerCrashReproFixture
 {
@@ -191,8 +183,7 @@ public sealed class JobRunnerCrashReproFixture
         var projectDir = Path.GetFullPath(
             Path.Combine(ThisFileDirectory(), "..", "Brutal.Concurrency.Tests.CrashRepro")
         );
-        // Build under this test assembly's own output directory, not a machine-wide temp path, so that concurrent
-        // test runs from different checkouts never build into, or execute, each other's helper binaries.
+        // Not a shared temp path, so concurrent runs from different checkouts never share helper binaries.
         var artifacts = Path.Combine(AppContext.BaseDirectory, "jobrunner-crash-repro");
 
         var build = Execute(

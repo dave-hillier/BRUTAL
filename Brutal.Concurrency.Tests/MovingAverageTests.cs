@@ -12,7 +12,6 @@ public class MovingAverageTests
         average.Update(1);
         var result = average.Update(1);
 
-        // The window now holds [1, 1].
         Assert.Equal(1.0, result);
         Assert.Equal(1.0, average.CurrentAverage);
     }

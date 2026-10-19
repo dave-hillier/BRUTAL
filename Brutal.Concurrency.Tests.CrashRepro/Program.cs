@@ -1,14 +1,7 @@
 using Brutal.Concurrency.Jobs;
 
-// Out-of-process reproduction for JobRunner behaviour when a job's Run() throws.
-// An exception escaping a ThreadPool work item terminates the process, so this cannot
-// run inside the xUnit test host. JobRunnerTests launches this program and inspects
-// its exit code and standard output.
-//
-// Output lines:
-//   COMPLETED result=<ExecutionResult> jobsAfterThrowRan=<n>   (written by the completion callback)
-//   SURVIVED                                                   (written once the runner is idle again)
-// Exit code 0 means the process survived the throwing job.
+// Runs a throwing job out of process, since an exception escaping a ThreadPool work item
+// terminates the process. JobRunnerTests checks the exit code and the COMPLETED/SURVIVED lines.
 
 var jobAfterThrow = new CountingJob();
 var runner = new JobRunner("crash-repro");

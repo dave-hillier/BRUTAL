@@ -80,10 +80,9 @@ public class JobRunner
     public JobState State => ReadStateSynchronised();
 
     /// <summary>
-    /// The exception thrown by a job during the last execution, if that execution's result was <see cref="ExecutionResult.Faulted"/>; otherwise null.
-    /// Cleared when <see cref="ExecuteJobs"/> is next called.
+    /// The exception thrown by a job in the last <see cref="ExecutionResult.Faulted"/> execution; otherwise null.
     /// </summary>
-    /// <remarks>Only read this once the runner is Idle again, or from within the completion callback.</remarks>
+    /// <remarks>Cleared by <see cref="ExecuteJobs"/>. Only read this once the runner is Idle again, or from within the completion callback.</remarks>
     public Exception? LastException { get; private set; }
 
     /// <summary>
@@ -124,9 +123,8 @@ public class JobRunner
     /// After a call to ExecuteJobs() no more jobs can be queued until the runner is idle.
     /// </summary>
     /// <param name="onCompleteHandler" cref="JobCompletedDelegate" >An optional callback that is invoked when the JobRunner jobs have finished, been aborted or a job has thrown.</param>
-    /// <remarks>Metrics are updated only when every job ran (<see cref="ExecutionResult.Success"/>); an aborted or faulted run is not recorded,
-    /// although the callback still receives that run's duration. If there are no jobs to run, metrics are not updated, but the callback is still
-    /// called with the last tick time being set to 0.</remarks>
+    /// <remarks>Metrics are updated only on <see cref="ExecutionResult.Success"/>; the callback still receives the duration of an aborted or faulted run.
+    /// If there are no jobs to run, the callback is called with the last tick time being set to 0.</remarks>
     /// <exception cref="InvalidOperationException">Thrown if the runner is not currently idle</exception>
     public void ExecuteJobs(JobCompletedDelegate? onCompleteHandler = null)
     {
@@ -320,8 +318,7 @@ public class JobRunner
         }
         catch (Exception e)
         {
-            // An exception escaping a ThreadPool work item terminates the process, so it must not leave DoWork.
-            // Like an abort, the remaining jobs are not run.
+            // An exception escaping a ThreadPool work item terminates the process.
             LastException = e;
             executionResult = ExecutionResult.Faulted;
         }
