@@ -215,8 +215,7 @@ public static class GltfUtility
     }
 
     /// <summary>
-    /// Resolves a relative glTF URI reference against a directory. glTF URIs are RFC 3986 URI
-    /// references, so percent-escapes (e.g. <c>%20</c>) are decoded before forming the file path.
+    /// Resolves a relative glTF URI (RFC 3986) against a directory, decoding percent-escapes.
     /// </summary>
     internal static string ResolveRelativeUri(string directoryPath, string uri)
     {

@@ -32,7 +32,6 @@ public class GltfUtilityTests
     [Fact]
     public void LoadBinaryBuffer_percent_decodes_relative_uri()
     {
-        // Mirrors the Khronos "Box With Spaces" sample: uri "Box%20With%20Spaces.bin".
         using var dir = new TempDir();
         var bin = new byte[] { 1, 2, 3, 4 };
         System.IO.File.WriteAllBytes(dir.File("Box With Spaces.bin"), bin);
