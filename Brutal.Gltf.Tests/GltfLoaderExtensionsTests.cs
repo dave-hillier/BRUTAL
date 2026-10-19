@@ -6,7 +6,6 @@ namespace Brutal.Gltf.Tests;
 
 public class GltfLoaderExtensionsTests
 {
-    // A valid glTF 2.0 model: accessors and meshes are optional top-level properties.
     const string NodeOnlyModel = """
         {
           "asset": { "version": "2.0" },
@@ -57,7 +56,6 @@ public class GltfLoaderExtensionsTests
         loader.FlipZAxis();
 
         var result = AsFloats(loader.LoadedBuffers[0]!, 6);
-        // Morphed position (1,2,13) must become (1,2,-13): base z -> -3, delta z -> -10.
         Assert.Equal(new float[] { 1, 2, -3, 0, 0, -10 }, result);
     }
 
@@ -97,9 +95,6 @@ public class GltfLoaderExtensionsTests
         Assert.Equal(new float3(2, 4, 6), loader.GltfJson.Nodes[0].Translation);
     }
 
-    // Base POSITION (1,2,3) on a node translated by (0,0,5), with one morph target whose POSITION
-    // accessor is sparse: element 0 is replaced by sparseDelta. With a baseDelta the accessor also
-    // has a bufferView holding the initial values; without one, the initial values are zeros.
     // Buffer layout: base position | base delta (optional) | sparse index (uint) | sparse value
     static GltfLoader LoadSparseMorphModel(TempDir dir, float[]? baseDelta, float[] sparseDelta)
     {
@@ -191,9 +186,7 @@ public class GltfLoaderExtensionsTests
         Assert.Equal(new float[] { 2, 4, 6 }, FloatsAt(loader, 16, 3));
     }
 
-    // Base float POSITION (1,2,3) on a node translated by (0,0,5), with one morph target whose
-    // POSITION accessor is quantized (KHR_mesh_quantization): two normalized VEC3 elements of the
-    // given signed component type, each padded to 4 bytes as vertex attributes require.
+    // Two normalized VEC3 morph target elements, each padded to 4 bytes as vertex attributes require
     static GltfLoader LoadQuantizedMorphModel(TempDir dir, int componentType, byte[] targetData)
     {
         var data = Floats(1, 2, 3).Concat(targetData).ToArray();
@@ -229,7 +222,6 @@ public class GltfLoaderExtensionsTests
     public void FlipZAxis_negates_a_normalized_short_morph_target_saturating_the_minimum()
     {
         using var dir = new TempDir();
-        // Element 1 holds -32768, which decodes to -1.0 like -32767; its negation is 32767 (+1.0).
         var loader = LoadQuantizedMorphModel(dir, 5122, Shorts(1, 2, 16384, 0, 4, 5, -32768, 0));
 
         loader.FlipZAxis();
@@ -264,8 +256,6 @@ public class GltfLoaderExtensionsTests
         Assert.Equal(new float3(0, 0, 10), loader.GltfJson.Nodes[0].Translation);
     }
 
-    // Two primitives: the first has a float POSITION (1,2,3), the second a quantized base POSITION,
-    // which the transforms cannot rewrite in place. The node is translated by (0,0,5).
     static GltfLoader LoadModelWithUnsupportedBasePosition(TempDir dir)
     {
         var data = Floats(1, 2, 3).Concat(Shorts(1, 2, 3, 0)).ToArray();

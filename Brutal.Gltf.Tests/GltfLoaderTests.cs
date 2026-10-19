@@ -23,7 +23,7 @@ public class GltfLoaderTests
     public void FlipZAxis_respects_byteStride_of_interleaved_vertex_data()
     {
         using var dir = new TempDir();
-        // vertex 0: pos (1,2,3) normal (0,0,1); vertex 1: pos (4,5,6) normal (0,0,-1); 12 bytes trailing pad
+        // Two interleaved position/normal vertices followed by 12 bytes of padding
         var data = Floats(1, 2, 3, 0, 0, 1, 4, 5, 6, 0, 0, -1, 0, 0, 0);
         var json = $$"""
             {
@@ -78,7 +78,6 @@ public class GltfLoaderTests
         var resultIndices = MemoryMarshal
             .Cast<byte, ushort>(loader.LoadedBuffers[0]!.AsSpan(positions.Length, indices.Length))
             .ToArray();
-        // Line segments (0,1) (2,3) (4,5) have no winding; reflection must leave them intact.
         Assert.Equal(new ushort[] { 0, 1, 2, 3, 4, 5 }, resultIndices);
     }
 }

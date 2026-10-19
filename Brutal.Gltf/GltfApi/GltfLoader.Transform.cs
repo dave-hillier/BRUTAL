@@ -51,15 +51,9 @@ public static partial class GltfLoaderExtensions
     /// </list>
     /// </para>
     /// </summary>
-    /// <remarks>
-    /// Every accessor is checked before anything changes: an unsupported one throws
-    /// <see cref="NotSupportedException"/> and leaves the model untouched. Accessor data must be
-    /// FLOAT, except morph target displacements (see below). The substitute values of a sparse
-    /// accessor are transformed along with its initial values; index accessors must not be sparse.
-    /// Morph target displacements may also use the signed BYTE or SHORT types of
-    /// KHR_mesh_quantization, which are transformed as integers (negating the most negative value
-    /// gives the maximum, exact for normalized data). Other non-float morph target data is left unchanged.
-    /// </remarks>
+    /// <exception cref="NotSupportedException">
+    /// A non-morph-target accessor is not FLOAT, or an index accessor is sparse. The model is left unchanged.
+    /// </exception>
     public static void FlipHandedness(this GltfLoader loader) => FlipZAxis(loader);
 
     /// <summary>
@@ -80,15 +74,9 @@ public static partial class GltfLoaderExtensions
     /// </list>
     /// </para>
     /// </summary>
-    /// <remarks>
-    /// Every accessor is checked before anything changes: an unsupported one throws
-    /// <see cref="NotSupportedException"/> and leaves the model untouched. Accessor data must be
-    /// FLOAT, except morph target displacements (see below). The substitute values of a sparse
-    /// accessor are transformed along with its initial values; index accessors must not be sparse.
-    /// Morph target displacements may also use the signed BYTE or SHORT types of
-    /// KHR_mesh_quantization, which are transformed as integers (negating the most negative value
-    /// gives the maximum, exact for normalized data). Other non-float morph target data is left unchanged.
-    /// </remarks>
+    /// <exception cref="NotSupportedException">
+    /// A non-morph-target accessor is not FLOAT, or an index accessor is sparse. The model is left unchanged.
+    /// </exception>
     public static void FlipZAxis(this GltfLoader loader) =>
         FlipAxisImpl(loader, OffZ, OffX, OffY, [M31, M32, M34, M13, M23, M43]);
 
@@ -110,15 +98,9 @@ public static partial class GltfLoaderExtensions
     /// </list>
     /// </para>
     /// </summary>
-    /// <remarks>
-    /// Every accessor is checked before anything changes: an unsupported one throws
-    /// <see cref="NotSupportedException"/> and leaves the model untouched. Accessor data must be
-    /// FLOAT, except morph target displacements (see below). The substitute values of a sparse
-    /// accessor are transformed along with its initial values; index accessors must not be sparse.
-    /// Morph target displacements may also use the signed BYTE or SHORT types of
-    /// KHR_mesh_quantization, which are transformed as integers (negating the most negative value
-    /// gives the maximum, exact for normalized data). Other non-float morph target data is left unchanged.
-    /// </remarks>
+    /// <exception cref="NotSupportedException">
+    /// A non-morph-target accessor is not FLOAT, or an index accessor is sparse. The model is left unchanged.
+    /// </exception>
     public static void FlipXAxis(this GltfLoader loader) =>
         FlipAxisImpl(loader, OffX, OffY, OffZ, [M12, M13, M14, M21, M31, M41]);
 
@@ -140,15 +122,9 @@ public static partial class GltfLoaderExtensions
     /// </list>
     /// </para>
     /// </summary>
-    /// <remarks>
-    /// Every accessor is checked before anything changes: an unsupported one throws
-    /// <see cref="NotSupportedException"/> and leaves the model untouched. Accessor data must be
-    /// FLOAT, except morph target displacements (see below). The substitute values of a sparse
-    /// accessor are transformed along with its initial values; index accessors must not be sparse.
-    /// Morph target displacements may also use the signed BYTE or SHORT types of
-    /// KHR_mesh_quantization, which are transformed as integers (negating the most negative value
-    /// gives the maximum, exact for normalized data). Other non-float morph target data is left unchanged.
-    /// </remarks>
+    /// <exception cref="NotSupportedException">
+    /// A non-morph-target accessor is not FLOAT, or an index accessor is sparse. The model is left unchanged.
+    /// </exception>
     public static void FlipYAxis(this GltfLoader loader) =>
         FlipAxisImpl(loader, OffY, OffX, OffZ, [M21, M23, M24, M12, M32, M42]);
 
@@ -170,15 +146,9 @@ public static partial class GltfLoaderExtensions
     /// </list>
     /// </para>
     /// </summary>
-    /// <remarks>
-    /// Every accessor is checked before anything changes: an unsupported one throws
-    /// <see cref="NotSupportedException"/> and leaves the model untouched. Accessor data must be
-    /// FLOAT, except morph target displacements (see below). The substitute values of a sparse
-    /// accessor are transformed along with its initial values; index accessors must not be sparse.
-    /// Morph target displacements may also use the signed BYTE or SHORT types of
-    /// KHR_mesh_quantization, which are transformed as integers (negating the most negative value
-    /// gives the maximum, exact for normalized data). Other non-float morph target data is left unchanged.
-    /// </remarks>
+    /// <exception cref="NotSupportedException">
+    /// A non-morph-target accessor is not FLOAT, or an index accessor is sparse. The model is left unchanged.
+    /// </exception>
     public static void SwapYZAxes(this GltfLoader loader) =>
         SwapAxesImpl(loader, OffY, OffZ, [M12, M13, M21, M31, M22, M33, M23, M32, M24, M34, M42, M43]);
 
@@ -200,15 +170,9 @@ public static partial class GltfLoaderExtensions
     /// </list>
     /// </para>
     /// </summary>
-    /// <remarks>
-    /// Every accessor is checked before anything changes: an unsupported one throws
-    /// <see cref="NotSupportedException"/> and leaves the model untouched. Accessor data must be
-    /// FLOAT, except morph target displacements (see below). The substitute values of a sparse
-    /// accessor are transformed along with its initial values; index accessors must not be sparse.
-    /// Morph target displacements may also use the signed BYTE or SHORT types of
-    /// KHR_mesh_quantization, which are transformed as integers (negating the most negative value
-    /// gives the maximum, exact for normalized data). Other non-float morph target data is left unchanged.
-    /// </remarks>
+    /// <exception cref="NotSupportedException">
+    /// A non-morph-target accessor is not FLOAT, or an index accessor is sparse. The model is left unchanged.
+    /// </exception>
     public static void SwapXYAxes(this GltfLoader loader) =>
         SwapAxesImpl(loader, OffX, OffY, [M11, M22, M12, M21, M13, M23, M14, M24, M31, M32, M41, M42]);
 
@@ -230,15 +194,9 @@ public static partial class GltfLoaderExtensions
     /// </list>
     /// </para>
     /// </summary>
-    /// <remarks>
-    /// Every accessor is checked before anything changes: an unsupported one throws
-    /// <see cref="NotSupportedException"/> and leaves the model untouched. Accessor data must be
-    /// FLOAT, except morph target displacements (see below). The substitute values of a sparse
-    /// accessor are transformed along with its initial values; index accessors must not be sparse.
-    /// Morph target displacements may also use the signed BYTE or SHORT types of
-    /// KHR_mesh_quantization, which are transformed as integers (negating the most negative value
-    /// gives the maximum, exact for normalized data). Other non-float morph target data is left unchanged.
-    /// </remarks>
+    /// <exception cref="NotSupportedException">
+    /// A non-morph-target accessor is not FLOAT, or an index accessor is sparse. The model is left unchanged.
+    /// </exception>
     public static void SwapXZAxes(this GltfLoader loader) =>
         SwapAxesImpl(loader, OffX, OffZ, [M11, M33, M12, M32, M13, M31, M14, M34, M21, M23, M41, M43]);
 
@@ -261,16 +219,12 @@ public static partial class GltfLoaderExtensions
     /// </list>
     /// </para>
     /// </summary>
-    /// <remarks>
-    /// Every accessor is checked before anything changes: an unsupported one throws
-    /// <see cref="NotSupportedException"/> and leaves the model untouched. Accessor data must be
-    /// FLOAT, except morph target displacements (see below). The substitute values of a sparse
-    /// accessor are transformed along with its initial values; index accessors must not be sparse.
-    /// Non-float (quantized) morph target displacements cannot be rescaled in place and are left unchanged.
-    /// </remarks>
+    /// <remarks>Quantized morph target displacements are left unchanged.</remarks>
+    /// <exception cref="NotSupportedException">
+    /// A non-morph-target accessor is not FLOAT, or an index accessor is sparse. The model is left unchanged.
+    /// </exception>
     public static void Scale(this GltfLoader loader, float scale)
     {
-        // Integer (quantized) morph target displacements cannot be rescaled in place: they are left unchanged
         var edits = PlanAccessorEdits(
             loader,
             use =>
@@ -290,9 +244,6 @@ public static partial class GltfLoaderExtensions
             node.Matrix = ScaleMatrixTranslation(node.Matrix, scale);
         }
 
-        // Positions, morph target position displacements and animation translations are in the same
-        // units; skin inverse bind matrices scale their translation row only. Normals and tangents
-        // are direction vectors and are not visited
         ApplyAccessorEdits(
             loader,
             edits,
@@ -312,7 +263,6 @@ public static partial class GltfLoaderExtensions
 
     #region Private helpers
 
-    // How a transform reads an accessor, which decides how its data is rewritten
     private enum AccessorUse
     {
         Position,
@@ -327,11 +277,9 @@ public static partial class GltfLoaderExtensions
         AnimationRotation,
     }
 
-    // One stretch of an accessor's data in a bufferView: its initial elements, or the tightly packed
-    // substitute values of its sparse block
+    // An accessor's initial elements, or the tightly packed values of its sparse block
     private readonly record struct AccessorRegion(int BufferView, int ByteOffset, int Length, int Stride);
 
-    // An accessor a transform rewrites, resolved and validated before anything is changed
     private sealed record AccessorEdit(
         AccessorUse Use,
         Accessor.ComponentTypeEnum ComponentType,
@@ -345,9 +293,6 @@ public static partial class GltfLoaderExtensions
         AccessorUse use
     );
 
-    /// <summary>
-    /// Every accessor the transforms visit, in visiting order, with the use it is visited for.
-    /// </summary>
     private static IEnumerable<(int Accessor, AccessorUse Use)> AccessorUses(Gltf gltf)
     {
         foreach (var mesh in gltf.Meshes ?? [])
@@ -363,7 +308,6 @@ public static partial class GltfLoaderExtensions
             if (prim.Attributes.TryGetValue("TANGENT", out var tangIdx))
                 yield return (tangIdx, AccessorUse.Tangent);
 
-            // Morph target displacements live in the same coordinate space as the base attributes
             if (prim.Targets != null)
                 foreach (var target in prim.Targets)
                 {
@@ -399,17 +343,8 @@ public static partial class GltfLoaderExtensions
             }
     }
 
-    /// <summary>
-    /// Resolves and validates every accessor a transform rewrites, so that an unsupported accessor
-    /// throws before any node or buffer has changed. Each accessor is rewritten once, for its first use.
-    /// <para>
-    /// The rewrite helpers work on FLOAT components. Morph target displacements may also be the
-    /// signed BYTE or SHORT types that KHR_mesh_quantization allows: when
-    /// <paramref name="integerMorphTargets"/> is set they are rewritten as integers, otherwise they
-    /// are left unchanged. Any other non-float morph target data is left unchanged too, as it was
-    /// before morph targets were visited; any other non-float accessor is rejected.
-    /// </para>
-    /// </summary>
+    // Validates every accessor up front so an unsupported one throws before anything changes.
+    // Non-float morph targets are skipped, except BYTE/SHORT (KHR_mesh_quantization) when integerMorphTargets is set.
     private static List<AccessorEdit> PlanAccessorEdits(
         GltfLoader loader,
         Func<AccessorUse, bool> isTransformed,
@@ -462,16 +397,8 @@ public static partial class GltfLoaderExtensions
         return edits;
     }
 
-    /// <summary>
-    /// The data of an accessor, along with the byte distance between consecutive elements, which is
-    /// the bufferView's byteStride when vertex attributes are interleaved.
-    /// <para>
-    /// A sparse accessor's substitute values are tightly packed elements that replace some of its
-    /// initial values. Every transform rewrites each element on its own, so rewriting the initial
-    /// values and the substitutes alike gives the transformed accessor. Without a bufferView the
-    /// initial values are zeros, which no transform changes, so only the substitutes are rewritten.
-    /// </para>
-    /// </summary>
+    // Transforms are per-element, so rewriting both the initial and the sparse values is sufficient.
+    // Without a bufferView the initial values are zeros, which no transform changes.
     private static AccessorRegion[] AccessorRegions(GltfLoader loader, Accessor accessor)
     {
         var elementSize = (int)accessor.ElementSize();
@@ -499,7 +426,7 @@ public static partial class GltfLoaderExtensions
     {
         // The last element occupies only elementSize bytes: an interleaved view may end right after it
         var length = count == 0 ? 0 : (count - 1) * stride + elementSize;
-        // Slicing now loads the buffer and rejects out-of-range data before anything has changed
+        // Rejects out-of-range data before anything has changed
         _ = loader.GetBufferView(bufferView).Slice(byteOffset, length);
         return new AccessorRegion(bufferView, byteOffset, length, stride);
     }
@@ -516,11 +443,6 @@ public static partial class GltfLoaderExtensions
             );
     }
 
-    /// <summary>
-    /// Negates one vector component, given by its byte offset within a float element, of float or
-    /// signed integer data. The most negative integer has no positive counterpart and becomes the
-    /// maximum, which is exact for normalized data, where both decode to -1.0.
-    /// </summary>
     private static void NegateVectorComponent(
         ReadOnlySpan<byte> buffer,
         int elementByteStride,
@@ -545,10 +467,6 @@ public static partial class GltfLoaderExtensions
         }
     }
 
-    /// <summary>
-    /// Swaps two vector components, given by their byte offsets within a float element, of float or
-    /// signed integer data.
-    /// </summary>
     private static void SwapVectorComponents(
         ReadOnlySpan<byte> buffer,
         int elementByteStride,
@@ -587,6 +505,7 @@ public static partial class GltfLoaderExtensions
     )
         where T : unmanaged, IBinaryInteger<T>, ISignedNumber<T>, IMinMaxValue<T>
     {
+        // MinValue saturates to MaxValue: both decode to -1.0 when normalized
         fixed (byte* basePtr = &MemoryMarshal.GetReference(buffer))
         {
             var ptr = basePtr + componentByteOffset;
@@ -633,10 +552,6 @@ public static partial class GltfLoaderExtensions
         int componentByteOffsetB
     ) => SwapComponents<float>(buffer, elementByteStride, componentByteOffsetA, componentByteOffsetB);
 
-    /// <summary>
-    /// Iterates over a raw accessor buffer and swaps two components of type <typeparamref name="T"/>
-    /// within each element.
-    /// </summary>
     private static unsafe void SwapComponents<T>(
         ReadOnlySpan<byte> buffer,
         int elementByteStride,
@@ -725,8 +640,7 @@ public static partial class GltfLoaderExtensions
                 switch (use)
                 {
                     case AccessorUse.Tangent:
-                        // Negate the axis component and the handedness sign W: reflecting one axis
-                        // flips the tangent frame orientation
+                        // Negate the handedness sign W: reflecting one axis flips the tangent frame
                         NegateComponent(data, stride, vecOff);
                         NegateComponent(data, stride, OffW);
                         break;
@@ -741,8 +655,7 @@ public static partial class GltfLoaderExtensions
                         NegateComponent(data, stride, quatOffB);
                         break;
                     default:
-                        // Positions, normals, animation translations and morph target displacements
-                        // (target tangents are VEC3 deltas with no handedness sign)
+                        // Target tangents are VEC3 deltas with no handedness sign
                         NegateVectorComponent(data, stride, vecOff, componentType);
                         break;
                 }
@@ -816,9 +729,8 @@ public static partial class GltfLoaderExtensions
                 {
                     case AccessorUse.Tangent:
                     case AccessorUse.AnimationRotation:
-                        // Swap the two axis components and negate W: any axis swap is a reflection
-                        // (det = -1), which flips the tangent frame orientation, and glTF stores
-                        // quaternions as float4(X, Y, Z, W), whose rotation sense W reverses
+                        // Any axis swap is a reflection (det = -1): negate tangent handedness W and
+                        // quaternion W
                         SwapComponents(data, stride, vecOffA, vecOffB);
                         NegateComponent(data, stride, OffW);
                         break;
@@ -829,8 +741,7 @@ public static partial class GltfLoaderExtensions
                         SwapMatrixElementsArray(data, stride, matrixSwapPairs);
                         break;
                     default:
-                        // Positions, normals, animation translations and morph target displacements
-                        // (target tangents are VEC3 deltas with no handedness sign)
+                        // Target tangents are VEC3 deltas with no handedness sign
                         SwapVectorComponents(data, stride, vecOffA, vecOffB, componentType);
                         break;
                 }
