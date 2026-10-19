@@ -211,7 +211,15 @@ public static class GltfUtility
             }
         }
         // Load external reference
-        return File.ReadAllBytes(Path.Combine(Path.GetDirectoryName(baseFilePath) ?? "", uri));
+        return File.ReadAllBytes(ResolveRelativeUri(Path.GetDirectoryName(baseFilePath) ?? "", uri));
+    }
+
+    /// <summary>
+    /// Resolves a relative glTF URI (RFC 3986) against a directory, decoding percent-escapes.
+    /// </summary>
+    internal static string ResolveRelativeUri(string directoryPath, string uri)
+    {
+        return Path.Combine(directoryPath, Uri.UnescapeDataString(uri));
     }
 
     private static byte[] LoadBinaryBufferUnchecked(Buffer buffer, string baseFilePath)
@@ -845,8 +853,8 @@ public static class GltfUtility
                 {
                     if (!image.Uri.StartsWith("data:"))
                     {
-                        var sourceFilePath = Path.Combine(inputDirectoryPath, image.Uri);
-                        var fileName = $"{inputFilePath}_image{index}.bin";
+                        var sourceFilePath = ResolveRelativeUri(inputDirectoryPath, image.Uri);
+                        var fileName = $"{inputFileName}_image{index}{Path.GetExtension(sourceFilePath)}";
 
                         if (File.Exists(sourceFilePath))
                         {
@@ -854,13 +862,13 @@ public static class GltfUtility
                             File.Copy(sourceFilePath, destinationFilePath, true);
                         }
 
-                        image.Uri = fileName;
+                        image.Uri = Uri.EscapeDataString(fileName);
                     }
                 }
                 else if (image.BufferView.HasValue)
                 {
                     var bufferView = model.BufferViews[image.BufferView.Value];
-                    if (bufferView.Buffer == 0)
+                    if (binBuffer != null && bufferView.Buffer == 0)
                     {
                         imageBufferViewIndices.Add(image.BufferView.Value);
 
@@ -879,7 +887,7 @@ public static class GltfUtility
 
                         image.BufferView = null;
                         image.MimeType = null;
-                        image.Uri = fileName;
+                        image.Uri = Uri.EscapeDataString(fileName);
                     }
                 }
             }
@@ -900,7 +908,7 @@ public static class GltfUtility
                     if (!imageBufferViewIndices.Any(imageIndex => imageIndex == index))
                     {
                         var bufferView = model.BufferViews[index];
-                        if (bufferView.Buffer == 0)
+                        if (binBuffer != null && bufferView.Buffer == 0)
                         {
                             fileStream.Align(4);
                             var fileStreamPosition = fileStream.Position;
@@ -937,7 +945,7 @@ public static class GltfUtility
             }
             else
             {
-                binBuffer?.Uri = binFileName;
+                binBuffer?.Uri = Uri.EscapeDataString(binFileName);
                 binBuffer?.ByteLength = binByteLength;
             }
 
@@ -989,12 +997,12 @@ public static class GltfUtility
 
         if (model.Buffers != null)
         {
-            for (var index = 1; index < model.Buffers.Length; index++)
+            for (var index = 0; index < model.Buffers.Length; index++)
             {
                 var buffer = model.Buffers[index];
-                if (!buffer.Uri.StartsWith("data:"))
+                if (buffer != binBuffer && !buffer.Uri.StartsWith("data:"))
                 {
-                    var sourceFilePath = Path.Combine(inputDirectoryPath, buffer.Uri);
+                    var sourceFilePath = ResolveRelativeUri(inputDirectoryPath, buffer.Uri);
                     var fileName = $"{inputFileName}{index}.bin";
 
                     if (File.Exists(sourceFilePath))
@@ -1003,7 +1011,7 @@ public static class GltfUtility
                         File.Copy(sourceFilePath, destinationFilePath, true);
                     }
 
-                    buffer.Uri = fileName;
+                    buffer.Uri = Uri.EscapeDataString(fileName);
                 }
             }
         }
