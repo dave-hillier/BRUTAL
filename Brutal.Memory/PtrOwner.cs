@@ -108,9 +108,13 @@ public class PtrOwner<TValueType> : IDisposable, INullable
     /// </summary>
     /// <remarks>
     /// This PtrOwner will now own the memory of the given value.
+    /// Resetting to the pointer already owned does nothing.
     /// </remarks>
-    public void Reset(Ptr<TValueType> newValue = default)
+    public unsafe void Reset(Ptr<TValueType> newValue = default)
     {
+        if (newValue.Pointer == Ptr.Pointer)
+            return;
+
         Mem.Free(Swap(newValue));
     }
 
