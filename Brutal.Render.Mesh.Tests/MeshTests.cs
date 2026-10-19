@@ -13,7 +13,6 @@ public class MeshTests
         var replacement = mesh.EnsureVertexBuffer(0, ElementCount.Of(4), ByteSize.Of(16));
 
         Assert.NotSame(original, replacement);
-        // Same behaviour as EnsureIndexBuffer, which disposes through SetIndexBuffer
         Assert.True(original.IsNull(), "the replaced vertex list still owns its native memory (leaked)");
     }
 

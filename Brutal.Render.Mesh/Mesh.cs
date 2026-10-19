@@ -281,7 +281,7 @@ public static partial class MeshExtensions
     /// Convenience function to set/replace vertices via NativeStrideSpan
     public static void SetVerticesFromData<TKey>(this IVertexBufferMap<TKey> mesh, TKey key, NativeStrideSpan data)
     {
-        // SetVertexList does not dispose the list it replaces, so dispose it here, as EnsureVertexBuffer does
+        // SetVertexList does not dispose the replaced list
         mesh.TryGetVertexList(key, out var oldList);
         mesh.SetVertexList(key, NativeStrideList.FromSpan(data));
         oldList?.Dispose();

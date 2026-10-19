@@ -314,7 +314,7 @@ public static partial class ProcGenMeshLibrary
         ptr[2] = p2;
         ptr[3] = p3;
 
-        // Same triangles as the non-indexed AddQuad: (p0, p1, p2) and (p0, p2, p3)
+        // Same winding as the non-indexed AddQuad
         ReadOnlySpan<int> quadIndices = [0, 1, 2, 0, 2, 3];
         if (indices.Stride == ByteSize.Of<ushort>())
         {
@@ -478,7 +478,7 @@ public static partial class ProcGenMeshLibrary
             var normal = normals[i];
             var biTangent = float3.Cross(normal, GlobalUp);
             var tangent = float3.NormalizeOrZero(float3.Cross(normal, biTangent));
-            // A normal parallel to GlobalUp, of any length, has no tangent from it, so fall back to the X axis
+            // Normal parallel to GlobalUp: fall back to the X axis
             tangents[i] = tangent == float3.Zero ? new float4(1.0f, 0.0f, 0.0f, 1.0f) : new float4(tangent, 1.0f);
         }
     }

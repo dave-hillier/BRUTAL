@@ -19,7 +19,7 @@ public static partial class ProcGenMeshLibrary
         var dot = float3.Dot(normal, GlobalUp);
         if (MathF.Abs(dot) > 0.9999f)
         {
-            // Near GlobalUp the cross product is unreliable, so use GlobalRight with its component along normal removed
+            // Cross product with GlobalUp is unreliable here
             var globalRight = GlobalRight * MathF.Sign(dot);
             right = float3.Normalize(globalRight - normal * float3.Dot(globalRight, normal));
         }
@@ -318,7 +318,7 @@ public static partial class ProcGenMeshLibrary
         var vPtr = vertices.Ptr.Cast<float3>().Offset(vStart);
         var vCount = vertices.Count - vStart;
 
-        // Normals are generated from the grid coordinates, before they are overwritten with positions
+        // Must run before vPtr is overwritten with positions
         if (output.OutNormals != null)
         {
             var normals = output.OutNormals;

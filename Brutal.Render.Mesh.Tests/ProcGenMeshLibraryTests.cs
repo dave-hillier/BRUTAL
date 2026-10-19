@@ -71,7 +71,7 @@ public class ProcGenMeshLibraryTests
         const float size = 2f;
         ProcGenMeshLibrary.GeneratePlane(mesh, float3.Zero, float3.Normalize(new float3(1, 1, 0)), size, 1);
 
-        // Resolution 1 with indices: a 2x2 vertex grid, v0 -> v1 is one full edge
+        // 2x2 vertex grid
         var p = mesh.OutPositions.ToSpan<float3>().ToArray();
         Assert.Equal(4, p.Length);
         Assert.Equal(size, (p[1] - p[0]).Length(), 3);
@@ -137,7 +137,7 @@ public class ProcGenMeshLibraryTests
     {
         var mesh = NewMesh(indices: true, normals: true);
         ProcGenMeshLibrary.GenerateCube(mesh, float3.Zero, 1f, 2);
-        // Scales the normals without renormalising them, so the top and bottom face normals are (0, +-0.5, 0)
+        // Top and bottom normals become (0, +-0.5, 0)
         ProcGenMeshLibrary.ScaleWorldCoords(mesh, new float3(0.5f));
 
         using var tangents = new NativeStrideList(ByteSize.Of<float4>());
