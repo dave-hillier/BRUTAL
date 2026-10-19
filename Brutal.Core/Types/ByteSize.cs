@@ -80,7 +80,7 @@ public readonly record struct ByteSize32(uint Value)
 
     public static implicit operator ByteSize32(ByteSize value) => new(checked((uint)value.Value));
 
-    public static implicit operator int(ByteSize32 value) => (int)value.Value;
+    public static implicit operator int(ByteSize32 value) => checked((int)value.Value);
 
     public static explicit operator ByteSize32(int value) => new(checked((uint)value));
 
@@ -163,7 +163,7 @@ public readonly record struct ByteSize64(ulong Value)
 
     public static implicit operator ByteSize64(ByteSize value) => new(value.Value);
 
-    public static implicit operator int(ByteSize64 value) => (int)value.Value;
+    public static implicit operator int(ByteSize64 value) => checked((int)value.Value);
 
     public static explicit operator ByteSize64(int value) => new((ulong)value);
 
@@ -350,10 +350,16 @@ public readonly record struct ByteSize(nuint Value)
         if (Bytes == 0)
             return "0 B";
 
-        var order = (int)Math.Floor(Math.Log(Bytes, 1024));
-        order = Math.Min(order, Suffixes.Length - 1);
+        var order = Math.Min(BitOperations.Log2(Bytes) / 10, Suffixes.Length - 1);
 
-        var value = Bytes / Math.Pow(1024, order);
+        var value = Math.Round(Bytes / Math.Pow(1024, order), 2, MidpointRounding.AwayFromZero);
+
+        // Rounding can carry the value up to the next unit, e.g. 1023.999 KB -> 1 MB
+        if (value >= 1024 && order < Suffixes.Length - 1)
+        {
+            order++;
+            value = Math.Round(Bytes / Math.Pow(1024, order), 2, MidpointRounding.AwayFromZero);
+        }
 
         return $"{value:0.##} {Suffixes[order]}";
     }
@@ -363,7 +369,7 @@ public readonly record struct ByteSize(nuint Value)
     /// </summary>
     public ElementCount ToElementCount(ByteSize stride)
     {
-        return new ElementCount((int)(Bytes / stride.Bytes));
+        return new ElementCount(checked((int)(Bytes / stride.Bytes)));
     }
 
     /// <summary>
@@ -475,7 +481,9 @@ public readonly record struct ByteSize(nuint Value)
     public static ByteSize Of<T>(ElementCount count)
         where T : unmanaged
     {
-        return Of(Unsafe.SizeOf<T>() * count.Value);
+        ArgumentOutOfRangeException.ThrowIfNegative(count.Value, nameof(count));
+        // Multiply in nuint so large counts don't wrap
+        return (ByteSize)checked((nuint)Unsafe.SizeOf<T>() * (nuint)count.Value);
     }
 
     /// <summary>
