@@ -13,9 +13,15 @@ internal class JobRunnerTimer
         _workerStopwatch.Restart();
     }
 
-    public void Stop()
+    /// <summary>Stops the current measurement and returns its duration without recording it.</summary>
+    public double Stop()
     {
         _workerStopwatch.Stop();
+        return _workerStopwatch.Elapsed.TotalMilliseconds;
+    }
+
+    public void Commit()
+    {
         AddSample(_workerStopwatch.Elapsed.TotalMilliseconds);
     }
 

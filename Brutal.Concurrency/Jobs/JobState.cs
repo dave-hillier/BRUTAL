@@ -22,4 +22,5 @@ public enum ExecutionResult
     Success, // All jobs ran and completed
     NoJobs, // No jobs were queued when ExecuteJobs was called
     Aborted, // Jobs were aborted before completion
+    Faulted, // A job threw; remaining jobs were not run
 }
