@@ -54,10 +54,7 @@ public static partial class GltfLoaderExtensions
     /// </list>
     /// </para>
     /// </summary>
-    /// <exception cref="NotSupportedException">
-    /// An accessor this transform would rewrite lives in an interleaved bufferView (byteStride differs from
-    /// its element size). Thrown before anything is modified.
-    /// </exception>
+    /// <exception cref="NotSupportedException">An affected accessor is in an interleaved bufferView; the model is left unmodified.</exception>
     public static void FlipHandedness(this GltfLoader loader) => FlipZAxis(loader);
 
     /// <summary>
@@ -77,10 +74,7 @@ public static partial class GltfLoaderExtensions
     /// </list>
     /// </para>
     /// </summary>
-    /// <exception cref="NotSupportedException">
-    /// An accessor this transform would rewrite lives in an interleaved bufferView (byteStride differs from
-    /// its element size). Thrown before anything is modified.
-    /// </exception>
+    /// <exception cref="NotSupportedException">An affected accessor is in an interleaved bufferView; the model is left unmodified.</exception>
     public static void FlipZAxis(this GltfLoader loader) =>
         FlipAxisImpl(loader, OffZ, OffX, OffY, [M31, M32, M34, M13, M23, M43]);
 
@@ -101,10 +95,7 @@ public static partial class GltfLoaderExtensions
     /// </list>
     /// </para>
     /// </summary>
-    /// <exception cref="NotSupportedException">
-    /// An accessor this transform would rewrite lives in an interleaved bufferView (byteStride differs from
-    /// its element size). Thrown before anything is modified.
-    /// </exception>
+    /// <exception cref="NotSupportedException">An affected accessor is in an interleaved bufferView; the model is left unmodified.</exception>
     public static void FlipXAxis(this GltfLoader loader) =>
         FlipAxisImpl(loader, OffX, OffY, OffZ, [M12, M13, M14, M21, M31, M41]);
 
@@ -125,10 +116,7 @@ public static partial class GltfLoaderExtensions
     /// </list>
     /// </para>
     /// </summary>
-    /// <exception cref="NotSupportedException">
-    /// An accessor this transform would rewrite lives in an interleaved bufferView (byteStride differs from
-    /// its element size). Thrown before anything is modified.
-    /// </exception>
+    /// <exception cref="NotSupportedException">An affected accessor is in an interleaved bufferView; the model is left unmodified.</exception>
     public static void FlipYAxis(this GltfLoader loader) =>
         FlipAxisImpl(loader, OffY, OffX, OffZ, [M21, M23, M24, M12, M32, M42]);
 
@@ -149,10 +137,7 @@ public static partial class GltfLoaderExtensions
     /// </list>
     /// </para>
     /// </summary>
-    /// <exception cref="NotSupportedException">
-    /// An accessor this transform would rewrite lives in an interleaved bufferView (byteStride differs from
-    /// its element size). Thrown before anything is modified.
-    /// </exception>
+    /// <exception cref="NotSupportedException">An affected accessor is in an interleaved bufferView; the model is left unmodified.</exception>
     public static void SwapYZAxes(this GltfLoader loader) =>
         SwapAxesImpl(loader, OffY, OffZ, [M12, M13, M21, M31, M22, M33, M23, M32, M24, M34, M42, M43]);
 
@@ -173,10 +158,7 @@ public static partial class GltfLoaderExtensions
     /// </list>
     /// </para>
     /// </summary>
-    /// <exception cref="NotSupportedException">
-    /// An accessor this transform would rewrite lives in an interleaved bufferView (byteStride differs from
-    /// its element size). Thrown before anything is modified.
-    /// </exception>
+    /// <exception cref="NotSupportedException">An affected accessor is in an interleaved bufferView; the model is left unmodified.</exception>
     public static void SwapXYAxes(this GltfLoader loader) =>
         SwapAxesImpl(loader, OffX, OffY, [M11, M22, M12, M21, M13, M23, M14, M24, M31, M32, M41, M42]);
 
@@ -197,10 +179,7 @@ public static partial class GltfLoaderExtensions
     /// </list>
     /// </para>
     /// </summary>
-    /// <exception cref="NotSupportedException">
-    /// An accessor this transform would rewrite lives in an interleaved bufferView (byteStride differs from
-    /// its element size). Thrown before anything is modified.
-    /// </exception>
+    /// <exception cref="NotSupportedException">An affected accessor is in an interleaved bufferView; the model is left unmodified.</exception>
     public static void SwapXZAxes(this GltfLoader loader) =>
         SwapAxesImpl(loader, OffX, OffZ, [M11, M33, M12, M32, M13, M31, M14, M34, M21, M23, M41, M43]);
 
@@ -222,10 +201,7 @@ public static partial class GltfLoaderExtensions
     /// </list>
     /// </para>
     /// </summary>
-    /// <exception cref="NotSupportedException">
-    /// An accessor this transform would rewrite lives in an interleaved bufferView (byteStride differs from
-    /// its element size). Thrown before anything is modified.
-    /// </exception>
+    /// <exception cref="NotSupportedException">An affected accessor is in an interleaved bufferView; the model is left unmodified.</exception>
     public static void Scale(this GltfLoader loader, float scale)
     {
         ThrowIfAnyTransformedAccessorIsInterleaved(loader, positionalOnly: true);
@@ -289,17 +265,10 @@ public static partial class GltfLoaderExtensions
     #region Private helpers
 
     /// <summary>
-    /// Throws <see cref="NotSupportedException"/> if any accessor the transform would rewrite lives in an
-    /// interleaved bufferView (byteStride different from the accessor's element size). The component
-    /// helpers below step through accessor data with a fixed, tightly packed element stride, so on an
-    /// interleaved view they would land on neighbouring attributes and silently corrupt them.
-    /// Runs before any part of the model is modified, so a rejected transform leaves the model untouched.
+    /// The component helpers below assume tightly packed elements, so interleaved accessors are rejected
+    /// before anything is modified.
     /// </summary>
-    /// <param name="loader">Loader whose model is about to be transformed</param>
-    /// <param name="positionalOnly">
-    /// True for <see cref="Scale"/>, which only touches positions, inverse bind matrices and translation
-    /// tracks; false for the axis flips and swaps, which also touch normals, tangents, indices and rotation tracks.
-    /// </param>
+    /// <param name="positionalOnly">True for <see cref="Scale"/>, which skips normals, tangents, indices and rotations.</param>
     private static void ThrowIfAnyTransformedAccessorIsInterleaved(GltfLoader loader, bool positionalOnly)
     {
         var gltf = loader.GltfJson;
@@ -348,7 +317,7 @@ public static partial class GltfLoaderExtensions
     {
         var accessor = gltf.Accessors[accessorIndex];
         if (accessor.BufferView is null)
-            return; // GetAccessorBufferSpan rejects sparse/bufferView-less accessors with its own error
+            return; // rejected by GetAccessorBufferSpan
 
         var byteStride = gltf.BufferViews[accessor.BufferView.Value].ByteStride;
         var elementSize = (int)accessor.ElementSize();

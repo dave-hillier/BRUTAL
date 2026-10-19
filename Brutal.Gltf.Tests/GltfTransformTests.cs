@@ -9,8 +9,7 @@ public sealed class GltfTransformTests : IDisposable
 
     public void Dispose() => Directory.Delete(_directory, recursive: true);
 
-    // Two vertices of interleaved POSITION + NORMAL (vec3 float each), the layout from the
-    // GetAccessorBufferSpan bug report: P0, N0, P1, N1.
+    // P0, N0, P1, N1
     static readonly float[] InterleavedData = [1, 2, 3, 10, 20, 30, 4, 5, 6, 40, 50, 60];
 
     GltfLoader LoadModel(float[] data, int? byteStride, int normalOffset)
@@ -48,9 +47,6 @@ public sealed class GltfTransformTests : IDisposable
 
     GltfLoader LoadInterleaved() => LoadModel(InterleavedData, byteStride: 24, normalOffset: 12);
 
-    // The transforms step through accessor data with a fixed per-element stride. On an interleaved
-    // bufferView they used to land on the neighbouring attribute every other step and silently
-    // corrupt it, so they must refuse such accessors before touching anything.
     public static TheoryData<string> Transforms =>
         [
             nameof(GltfLoaderExtensions.FlipZAxis),
@@ -90,7 +86,6 @@ public sealed class GltfTransformTests : IDisposable
     [Fact]
     public void FlipZAxis_negates_z_of_tightly_packed_positions_and_normals()
     {
-        // P0, P1, N0, N1 in one tightly packed view
         using var loader = LoadModel([1, 2, 3, 4, 5, 6, 10, 20, 30, 40, 50, 60], byteStride: null, normalOffset: 24);
 
         loader.FlipZAxis();
@@ -101,7 +96,6 @@ public sealed class GltfTransformTests : IDisposable
     [Fact]
     public void FlipZAxis_accepts_byteStride_equal_to_element_size()
     {
-        // An explicit byteStride of 12 for vec3 float is still tightly packed.
         using var loader = LoadModel([1, 2, 3, 4, 5, 6, 10, 20, 30, 40, 50, 60], byteStride: 12, normalOffset: 24);
 
         loader.FlipZAxis();
