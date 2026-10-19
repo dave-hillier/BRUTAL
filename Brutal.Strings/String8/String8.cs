@@ -191,7 +191,10 @@ public class String8 : IString8, IEquatable<String8?>, IComparable, IComparable<
     /// </remarks>
     public static String8 Move(Char8[] bytes)
     {
-        if (bytes.Length != 0 && bytes[^1] != 0)
+        if (bytes.Length == 0)
+            return Empty;
+
+        if (bytes[^1] != 0)
             return new String8(bytes.AsSpan());
 
         return new String8(bytes);
