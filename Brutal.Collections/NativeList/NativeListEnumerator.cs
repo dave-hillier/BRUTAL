@@ -3,7 +3,7 @@ using System.Collections;
 namespace Brutal.Collections;
 
 /// <summary>
-///  Enumerator class for generic NativeList
+/// Allocation-free enumerator for <see cref="NativeList{T}"/>
 /// </summary>
 public struct NativeListEnumerator<T> : IEnumerator<T>
     where T : unmanaged

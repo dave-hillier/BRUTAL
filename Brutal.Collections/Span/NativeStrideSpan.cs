@@ -35,8 +35,12 @@ public readonly ref struct NativeStrideSpan(Ptr inData, ElementCount inLength, B
     /// <summary>
     /// Slice the span into a new raw span.
     /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException">If the slice does not fit inside the span</exception>
     public NativeStrideSpan Slice(int start, int length)
     {
+        if ((uint)start > (uint)Length.Value || (uint)length > (uint)(Length.Value - start))
+            throw new ArgumentOutOfRangeException(nameof(start));
+
         return new NativeStrideSpan(Ptr.Offset(start * Stride), length, Stride);
     }
 
@@ -92,5 +96,15 @@ public readonly ref struct NativeStrideSpan(Ptr inData, ElementCount inLength, B
         return new Span<T>(Ptr.Cast<T>(), Length);
     }
 
-    public NativeStrideSpan this[Range start] => Slice(start.Start.Value, start.End.Value - start.Start.Value);
+    /// <summary>
+    /// Slice the span into a new raw span, supporting from-end indices like <see cref="Span{T}"/>.
+    /// </summary>
+    public NativeStrideSpan this[Range range]
+    {
+        get
+        {
+            var (offset, length) = range.GetOffsetAndLength(Length);
+            return Slice(offset, length);
+        }
+    }
 }
