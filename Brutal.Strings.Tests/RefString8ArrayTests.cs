@@ -18,7 +18,7 @@ public class RefString8ArrayTests
             for (var i = 0; i < 2; i++)
             {
                 var offset = (long)ptrs[i] - (long)p;
-                Assert.InRange(offset, 0, 7); // must point inside the string-bytes region (do not deref otherwise)
+                Assert.InRange(offset, 0, 7); // check before dereferencing
             }
 
             Assert.Equal("abc", new string((sbyte*)ptrs[0]));
