@@ -11,7 +11,6 @@ public class FreeListIndexPoolTests
         var index = pool.Add();
         pool.Remove(index);
 
-        // Correct behaviour: a double remove either throws or is a no-op.
         try
         {
             pool.Remove(index);
@@ -36,7 +35,6 @@ public class FreeListIndexPoolTests
         pool.Remove(a);
         pool.Remove(b); // b is now the head of the free list, a sits behind it
 
-        // Correct behaviour: a double remove either throws or is a no-op.
         try
         {
             pool.Remove(a);
