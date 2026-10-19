@@ -22,8 +22,7 @@ public class LogCategoryTests
             Assert.True(LogCategory.TryGet($"{prefix}-{i}", out _), $"category {i} missing");
     }
 
-    // Lives in this class (one xUnit collection, so it never runs alongside the test above) because
-    // LogSystem.Initialize mutates process-wide state.
+    // Kept in this class so xUnit never runs it in parallel with the test above; Initialize mutates global state.
     [Fact]
     public void Initialize_ConcurrentlyWithMake_GivesEveryCategoryALogger()
     {
@@ -34,13 +33,11 @@ public class LogCategoryTests
 
         for (var round = 0; round < rounds; round++)
         {
-            // Every participant waits here, so Initialize and the Make calls start together.
             using var start = new Barrier(makers + 1);
             var initialized = false;
             Exception? initFailure = null;
             var made = new List<string>[makers];
-            // Dedicated threads rather than Parallel.Invoke, which may run delegates inline on one
-            // thread and deadlock the barrier.
+            // Not Parallel.Invoke: it may run delegates inline on one thread and deadlock the barrier.
             var initializer = new Thread(() =>
             {
                 try
@@ -64,8 +61,7 @@ public class LogCategoryTests
                 try
                 {
                     start.SignalAndWait();
-                    // Keep making until Initialize has returned (bounded, so the registry stays small
-                    // and Initialize is not starved of the lock), so the two overlap.
+                    // Bounded so Initialize is not starved of the lock.
                     for (var i = 0; i < maxPerMaker && !Volatile.Read(ref initialized); i++)
                     {
                         var name = $"{prefix}-{round}-{m}-{i}";
