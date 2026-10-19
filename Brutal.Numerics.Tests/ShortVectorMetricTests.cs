@@ -1,8 +1,6 @@
 namespace Brutal.Numerics.Tests;
 
-// Dot, LengthSquared and DistanceSquared on 16-bit vectors must not wrap.
-// Every theory places the extreme value in each component position in turn,
-// so a fix that widens only some of the terms is caught.
+// Each theory puts the extreme value in every component position, so every term must be widened.
 public class ShortVectorMetricTests
 {
     // 65535 * 65535: one ushort square, or a short difference (32767 - -32768) squared.
