@@ -12,7 +12,7 @@ public class GltfUtilityTests
         return doc.RootElement.Clone();
     }
 
-    // glTF enum strings are case-sensitive; each value must round-trip to exactly the spec string.
+    // glTF enum strings are case-sensitive
     [Theory]
     [InlineData("SCALAR")]
     [InlineData("VEC2")]
@@ -52,7 +52,7 @@ public class GltfUtilityTests
         Assert.Equal(type, root.GetProperty("cameras")[0].GetProperty("type").GetString());
     }
 
-    // OPAQUE is the schema default, so it is omitted rather than written.
+    // OPAQUE is the schema default and is omitted
     [Theory]
     [InlineData("MASK")]
     [InlineData("BLEND")]
@@ -70,7 +70,7 @@ public class GltfUtilityTests
         Assert.Equal(alphaMode, root.GetProperty("materials")[0].GetProperty("alphaMode").GetString());
     }
 
-    // LINEAR is the schema default, so it is omitted rather than written.
+    // LINEAR is the schema default and is omitted
     [Theory]
     [InlineData("STEP")]
     [InlineData("CUBICSPLINE")]
@@ -123,7 +123,7 @@ public class GltfUtilityTests
         );
     }
 
-    // glTF 2.0 5.25: a node MAY have either a matrix or TRS properties, and an animated node MUST NOT have a matrix.
+    // glTF 2.0 5.25: an animated node MUST NOT have a matrix
     [Fact]
     public void SerializeModelJson_does_not_write_matrix_for_a_TRS_node()
     {

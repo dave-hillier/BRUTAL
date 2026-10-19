@@ -165,8 +165,7 @@ public static class GltfUtility
         return options;
     }
 
-    // The generated schema types omit default values through Newtonsoft-style ShouldSerializeX()
-    // methods, which System.Text.Json does not recognise on its own.
+    // The generated schema types omit defaults via Newtonsoft-style ShouldSerializeX(), which System.Text.Json ignores
     private static void HonorShouldSerializeMethods(JsonTypeInfo typeInfo)
     {
         if (typeInfo.Kind != JsonTypeInfoKind.Object)
