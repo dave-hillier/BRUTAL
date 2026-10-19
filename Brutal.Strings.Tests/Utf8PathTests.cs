@@ -3,11 +3,6 @@ using System.Runtime.CompilerServices;
 
 namespace Brutal.Strings.Tests;
 
-/// <summary>
-/// Utf8.Path behaviour on invalid UTF-8 and on very long paths. A stack overflow terminates the process, so
-/// each long-path call runs out-of-process in Brutal.Strings.Tests.CrashRepro on a worker thread with the
-/// default stack size.
-/// </summary>
 public class Utf8PathTests : IClassFixture<Utf8PathCrashReproFixture>
 {
     private const int LongPathByteLength = 1_000_000;
@@ -102,8 +97,7 @@ public sealed class Utf8PathCrashReproFixture
         var projectDir = Path.GetFullPath(
             Path.Combine(ThisFileDirectory(), "..", "Brutal.Strings.Tests.CrashRepro")
         );
-        // Build under this test assembly's own output directory so concurrent runs from other checkouts or
-        // artifact paths never share (and race on) the helper's bin/obj.
+        // Not a shared temp path, so concurrent runs from different checkouts never share helper binaries.
         var artifacts = Path.Combine(AppContext.BaseDirectory, "utf8path-crash-repro");
 
         var build = Execute(

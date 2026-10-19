@@ -1,12 +1,7 @@
 using Brutal.Strings;
 
-// Out-of-process reproduction for Utf8.Path on very long paths.
-// A stack overflow cannot be caught and terminates the process, so this cannot run inside
-// the xUnit test host. Utf8PathTests launches this program and inspects its exit code.
-//
-// Usage: Brutal.Strings.Tests.CrashRepro <GetDirectoryName|GetFileName|IsPathFullyQualified> <pathByteLength>
-// The call runs on a fresh worker thread with the default stack size.
-// Output: "SURVIVED <result>" and exit code 0 when the call returns.
+// Runs a Utf8.Path call on a long path out of process, since a stack overflow terminates the process.
+// Usage: <GetDirectoryName|GetFileName|IsPathFullyQualified> <pathByteLength>
 
 if (args.Length != 2)
 {
@@ -20,6 +15,7 @@ Array.Fill(path, (byte)'a');
 path[^2] = (byte)'/';
 
 string? result = null;
+// Worker threads get the default stack size, which is smaller than the main thread's on some platforms.
 var worker = new Thread(() =>
     result = method switch
     {
