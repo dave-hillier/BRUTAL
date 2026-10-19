@@ -19,7 +19,7 @@ public partial struct ValueStringBuilder<TChar>
         return GetSpan(Math.Max(contentSizeHint, Math.Abs(alignment)));
     }
 
-    /// GetSpan for a retry after a partial write into FreeSpan: if growing throws, restore our null terminator first.
+    /// GetSpan for a retry after a partial write into FreeSpan: restores the null terminator if growing throws.
     private Span<TChar> GetSpanAfterPartialWrite(int sizeHint)
     {
         try

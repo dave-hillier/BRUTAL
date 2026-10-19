@@ -5,9 +5,6 @@ namespace Brutal.Strings.Tests;
 
 public class StringBuilderTests
 {
-    // Doc (StringBuilder.WrittenSpan): "The element immediately after this span is always the null-terminator."
-    // TryAppend paths call Fail() to restore it after a partial write; the throwing Append<T> path does not.
-
     [Fact]
     public void ValueStringBuilder_FailedAppend_KeepsNullTerminator()
     {
@@ -17,7 +14,7 @@ public class StringBuilderTests
         var threw = false;
         try
         {
-            sb.Append("toolong"); // binds to Append<T>(string): partial UTF-8 write, then GetSpan throws
+            sb.Append("toolong"); // Append<T>(string): partial write, then GetSpan throws
         }
         catch (ArgumentOutOfRangeException)
         {
@@ -26,7 +23,7 @@ public class StringBuilderTests
 
         Assert.True(threw);
         Assert.Equal(0, sb.Position);
-        Assert.Equal(0, buffer[sb.Position]); // the element after WrittenSpan must be the null terminator
+        Assert.Equal(0, buffer[sb.Position]);
     }
 
     [Fact]
@@ -42,9 +39,7 @@ public class StringBuilderTests
         Assert.Equal(0, terminator);
     }
 
-    // Alignment pads by grapheme count, so multi-byte graphemes can need more room than was pre-grown:
-    // "éé" is 4 UTF-8 bytes but only 2 graphemes, so alignment 4 needs 6 bytes. With room for 4,
-    // the content is written, then the Align retry has to grow and throws.
+    // "éé" is 4 UTF-8 bytes but 2 graphemes, so alignment 4 needs 6 bytes and the Align retry throws.
 
     [Fact]
     public void ValueStringBuilder_FailedAlign_Formatted_KeepsNullTerminator()
@@ -94,12 +89,12 @@ public class StringBuilderTests
         Span<byte> buffer = stackalloc byte[9]; // capacity 8 + terminator
         var sb = buffer.ToStringBuilder();
         sb.Append("ab"u8);
-        var eAcute = "\u00e9"; // non-constant hole: keeps the inner string a nested handler (AlignFrom), not a constant
+        var eAcute = "\u00e9"; // non-constant, so the inner string is a nested handler (AlignFrom)
 
         var threw = false;
         try
         {
-            // inner handler writes "x\u00e9" (3 bytes, 2 graphemes) directly, then the outer hole pads it to 6 graphemes = 7 bytes
+            // "x\u00e9" is 3 bytes, 2 graphemes; padding to 6 graphemes needs 7 bytes
             sb.Append($"{$"x{eAcute}",6}");
         }
         catch (ArgumentOutOfRangeException)
@@ -150,9 +145,9 @@ public class StringBuilderTests
     {
         var sb = new StringBuilder<byte>(capacity: 8, maxCapacity: 8);
         sb.Append("ab"u8);
-        var eAcute = "\u00e9"; // non-constant hole: keeps the inner string a nested handler (AlignFrom), not a constant
+        var eAcute = "\u00e9"; // non-constant, so the inner string is a nested handler (AlignFrom)
 
-        // inner handler writes "x\u00e9" (3 bytes, 2 graphemes) directly, then the outer hole pads it to 6 graphemes = 7 bytes
+        // "x\u00e9" is 3 bytes, 2 graphemes; padding to 6 graphemes needs 7 bytes
         Assert.Throws<ArgumentOutOfRangeException>(() => sb.Append($"{$"x{eAcute}",6}"));
 
         Assert.Equal(2, sb.Position);
