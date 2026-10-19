@@ -6,10 +6,11 @@ public class RandomExtensionsTests
 {
     private const int SampleCount = 200_000;
 
+    // Returns the largest values Random produces
     private sealed class MaxRandom : Random
     {
-        public override float NextSingle() => MathF.BitDecrement(1f); // largest value Random.NextSingle returns
-        public override double NextDouble() => Math.BitDecrement(1.0); // largest value Random.NextDouble returns
+        public override float NextSingle() => MathF.BitDecrement(1f);
+        public override double NextDouble() => Math.BitDecrement(1.0);
     }
 
     [Fact]
@@ -115,9 +116,7 @@ public class RandomExtensionsTests
         AssertUniformInBall(() => r.NextDoublePointInSphere().Length());
     }
 
-    // Uniform on the sphere => each coordinate is uniform in [-1, 1] (Archimedes),
-    // so P(c > 0.5) = P(c < -0.5) = 0.25 on every axis. Checking both tails of all
-    // three axes catches a z confined to one hemisphere and a mis-scaled x or y.
+    // Archimedes: each coordinate is uniform in [-1, 1], so P(c > 0.5) = P(c < -0.5) = 0.25
     private static void AssertUniformOnSphere(Func<(double X, double Y, double Z)> sample)
     {
         var above = new int[3];

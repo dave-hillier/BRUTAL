@@ -19,7 +19,7 @@ public static class RandomExtensions
             throw new ArgumentOutOfRangeException(nameof(maxValue), @"maxValue must be greater than or equal to 0");
 
         var value = random.NextSingle() * maxValue;
-        // A subnormal maxValue lets the product round up to it; step back below it to keep the bound exclusive
+        // A subnormal maxValue lets the product round up to it
         if (value >= maxValue && maxValue > 0)
             value = float.BitDecrement(maxValue);
 
@@ -33,7 +33,6 @@ public static class RandomExtensions
             throw new ArgumentOutOfRangeException(nameof(maxValue), @"maxValue must be greater than or equal to 0");
 
         var value = random.NextDouble() * maxValue;
-        // A subnormal maxValue lets the product round up to it; step back below it to keep the bound exclusive
         if (value >= maxValue && maxValue > 0)
             value = double.BitDecrement(maxValue);
 
@@ -54,7 +53,7 @@ public static class RandomExtensions
             throw new ArgumentOutOfRangeException(nameof(minValue), @"minValue must be less than or equal to maxValue");
 
         var value = random.NextSingle() * (maxValue - minValue) + minValue;
-        // Rounding can land on maxValue; step back below it to keep the upper bound exclusive
+        // Rounding can land on maxValue
         if (value >= maxValue && minValue < maxValue)
             value = float.BitDecrement(maxValue);
 
@@ -68,7 +67,6 @@ public static class RandomExtensions
             throw new ArgumentOutOfRangeException(nameof(minValue), @"minValue must be less than or equal to maxValue");
 
         var value = random.NextDouble() * (maxValue - minValue) + minValue;
-        // Rounding can land on maxValue; step back below it to keep the upper bound exclusive
         if (value >= maxValue && minValue < maxValue)
             value = double.BitDecrement(maxValue);
 
