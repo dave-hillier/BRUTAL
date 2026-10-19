@@ -480,7 +480,7 @@ public class VertexInput
     /// <returns>The builder</returns>
     public VertexInput AddBinding<T>(int binding, VkVertexInputRate vertexInputRate)
     {
-        // The stride is the runtime size of the type, including any alignment padding
+        // Includes alignment padding
         return AddBinding(binding, ByteSize.Of(Unsafe.SizeOf<T>()), vertexInputRate);
     }
 
@@ -595,7 +595,7 @@ public class VertexInput
         {
             var info = field.Info;
             var format = field.FormatOverride != VkFormat.Undefined ? field.FormatOverride : info.GetFormat(field.Mode);
-            // Take the field's offset from the struct layout so alignment padding is respected
+            // Struct layout offset, so alignment padding is respected
             var offset = firstOffset + field.Offset;
 
             for (var j = 0; j < info.Num; ++j)
@@ -742,8 +742,7 @@ public class VertexInput
     {
         public readonly int Num = info.LayoutCount;
 
-        // Size of one element in the buffer. Normalized and scaled formats change how the shader
-        // reads the data, not how many bytes it occupies, so this is the same in every mode.
+        // Bytes per element in the buffer; normalized and scaled modes do not change it
         public readonly ByteSize Stride = inStride;
 
         public ByteSize GetBehaviourStride(Behavior mode) => Stride;
