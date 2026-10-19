@@ -175,8 +175,10 @@ namespace Brutal.GltfApi {
         /// </summary>
         public enum TypeEnum {
             
+            [System.Text.Json.Serialization.JsonStringEnumMemberNameAttribute("perspective")]
             Perspective,
             
+            [System.Text.Json.Serialization.JsonStringEnumMemberNameAttribute("orthographic")]
             Orthographic,
         }
     }

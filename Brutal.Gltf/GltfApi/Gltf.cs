@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Brutal.GltfApi;
 
 public partial class Gltf : IExtensionGltfObject
@@ -12,6 +14,7 @@ public partial class Gltf : IExtensionGltfObject
     /// This extension contains information about punctual lights in the scene.
     /// If the extension is not present, this property returns null.
     /// </summary>
+    [JsonIgnore]
     public LightsPunctualGltfDocumentExtension? LightData
     {
         get

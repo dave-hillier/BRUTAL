@@ -315,10 +315,13 @@ namespace Brutal.GltfApi {
         /// </summary>
         public enum AlphaModeEnum {
             
+            [System.Text.Json.Serialization.JsonStringEnumMemberNameAttribute("OPAQUE")]
             Opaque,
             
+            [System.Text.Json.Serialization.JsonStringEnumMemberNameAttribute("MASK")]
             Mask,
             
+            [System.Text.Json.Serialization.JsonStringEnumMemberNameAttribute("BLEND")]
             Blend,
         }
     }
