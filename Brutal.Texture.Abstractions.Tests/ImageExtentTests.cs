@@ -16,7 +16,6 @@ public class ImageExtentTests
     [Fact]
     public void UploadRegions_stages_every_mip_level_of_a_3d_texture_shallower_than_it_is_wide()
     {
-        // 8x8x2 RGBA8 with a full chain: 8x8x2, 4x4x1, 2x2x1, 1x1x1
         var extents = new[] { (8, 8, 2), (4, 4, 1), (2, 2, 1), (1, 1, 1) };
         var info = new GenericTexture.CreateInfo
         {

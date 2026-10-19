@@ -11,7 +11,7 @@ public class KtxTextureTests
     [Fact]
     public unsafe void KtxTexture2_row_pitch_rounds_partial_blocks_up()
     {
-        // A KTX2 BC1 texture 20 texels wide: level 1 is 10 texels = 3 blocks of 8 bytes
+        // BC1, 20 texels wide: level 1 is 10 texels = 3 blocks
         var native = (byte*)NativeMemory.AllocZeroed(256);
         var prot = (byte*)NativeMemory.AllocZeroed(256);
         try

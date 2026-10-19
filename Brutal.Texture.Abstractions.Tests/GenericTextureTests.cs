@@ -23,7 +23,7 @@ public class GenericTextureTests
     [Fact]
     public void Defaults_Uncompressed_halves_each_level_and_packs_them_contiguously()
     {
-        // 8x8, 4x4, 2x2 RGBA8: 256 + 64 + 16 bytes
+        // 8x8, 4x4, 2x2 RGBA8
         var texture = GenericTexture.Defaults.Uncompressed(TextureFormat.R8G8B8A8_UNorm, new int2(8, 8), levels: 3);
         try
         {
@@ -68,7 +68,7 @@ public class GenericTextureTests
     [Fact]
     public void Defaults_Uncompressed_lays_out_a_cubemap_array_in_level_layer_face_order()
     {
-        // 4x4 then 2x2 RGBA8, 2 layers of 6 faces each: 64-byte images then 16-byte images
+        // 4x4 and 2x2 RGBA8: 64- and 16-byte images
         var texture = GenericTexture.Defaults.Uncompressed(
             TextureFormat.R8G8B8A8_UNorm,
             new int2(4, 4),
@@ -110,7 +110,6 @@ public class GenericTextureTests
         var texture = GenericTexture.Defaults.Uncompressed(TextureFormat.R8G8B8A8_UNorm, new int2(4, 4));
         try
         {
-            // 4 texels * 4 bytes, no padding per the GenericTexture docs
             Assert.Equal(16, (int)texture.RowPitch(0));
             Assert.False(new TextureMemoryLayout(texture).ImageLayout(0).IsRowPadded);
         }
