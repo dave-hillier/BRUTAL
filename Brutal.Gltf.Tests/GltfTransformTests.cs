@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using Brutal.GltfApi;
 using Brutal.Numerics;
 
@@ -14,8 +15,7 @@ public sealed class GltfTransformTests : IDisposable
 
     GltfLoader LoadModel(float[] data, int? byteStride, int normalOffset)
     {
-        var bytes = new byte[data.Length * sizeof(float)];
-        System.Buffer.BlockCopy(data, 0, bytes, 0, bytes.Length);
+        var bytes = MemoryMarshal.AsBytes(data.AsSpan()).ToArray();
         var stride = byteStride is null ? "" : $", \"byteStride\": {byteStride}";
         var json = $$"""
             {
@@ -37,13 +37,8 @@ public sealed class GltfTransformTests : IDisposable
         return new GltfLoader(path);
     }
 
-    static float[] BufferFloats(GltfLoader loader)
-    {
-        var bytes = loader.GetOrLoadBuffer(0);
-        var floats = new float[bytes.Length / sizeof(float)];
-        System.Buffer.BlockCopy(bytes.ToArray(), 0, floats, 0, bytes.Length);
-        return floats;
-    }
+    static float[] BufferFloats(GltfLoader loader) =>
+        MemoryMarshal.Cast<byte, float>(loader.GetOrLoadBuffer(0)).ToArray();
 
     GltfLoader LoadInterleaved() => LoadModel(InterleavedData, byteStride: 24, normalOffset: 12);
 
