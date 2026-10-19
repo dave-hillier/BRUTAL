@@ -484,7 +484,7 @@ public readonly record struct ByteSize(nuint Value)
         where T : unmanaged
     {
         ArgumentOutOfRangeException.ThrowIfNegative(count.Value, nameof(count));
-        // multiply in nuint, not int, so large counts don't wrap
+        // Multiply in nuint so large counts don't wrap
         return (ByteSize)checked((nuint)Unsafe.SizeOf<T>() * (nuint)count.Value);
     }
 

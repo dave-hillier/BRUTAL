@@ -9,7 +9,6 @@ public unsafe class ByteSizeTests
     [Fact]
     public void ByteSize_Of_T_count_does_not_overflow_int()
     {
-        // 300M longs = 2.4 GB, well within nuint on 64-bit
         var size = ByteSize.Of<long>(300_000_000);
         Assert.Equal(2_400_000_000UL, (ulong)size.Bytes);
     }
@@ -17,7 +16,7 @@ public unsafe class ByteSizeTests
     [Fact]
     public void ByteSize_Of_T_count_does_not_wrap_to_a_smaller_size()
     {
-        // 300M Guids = 4.8 GB; int overflow wraps to a *positive* 505,032,704
+        // int overflow wraps to a positive 505,032,704
         var size = ByteSize.Of<Guid>(300_000_000);
         Assert.Equal(4_800_000_000UL, (ulong)size.Bytes);
     }
@@ -72,7 +71,7 @@ public unsafe class ByteSizeTests
         var fiveGb = new ByteSize64(5UL << 30);
         var ex = Record.Exception(() =>
         {
-            int asInt = fiveGb; // implicit
+            int asInt = fiveGb;
             Assert.Equal(5L << 30, (long)asInt);
         });
         Assert.IsType<OverflowException>(ex);
@@ -84,7 +83,7 @@ public unsafe class ByteSizeTests
         var threeGb = new ByteSize32(3u << 30);
         var ex = Record.Exception(() =>
         {
-            int asInt = threeGb; // implicit
+            int asInt = threeGb;
             Assert.Equal(3L << 30, (long)asInt);
         });
         Assert.IsType<OverflowException>(ex);
@@ -95,7 +94,7 @@ public unsafe class ByteSizeTests
     [InlineData(1023UL, "1023 B")]
     [InlineData(1024UL, "1 KB")]
     [InlineData(1048570UL, "1023.99 KB")] // 1023.994 KB stays in KB
-    [InlineData(1048571UL, "1 MB")] // 1023.995 KB rounds to 1024 KB, so promotes
+    [InlineData(1048571UL, "1 MB")] // 1023.995 KB
     [InlineData(1048575UL, "1 MB")] // 1 MiB - 1
     [InlineData(1048576UL, "1 MB")]
     [InlineData(1099511627775UL, "1 TB")] // 1 TiB - 1
@@ -105,7 +104,7 @@ public unsafe class ByteSizeTests
         Assert.Equal(expected, new ByteSize((nuint)bytes).ToString());
     }
 
-    // Exact binary fractions land on the midpoint; they round away from zero, as "0.##" always did
+    // Exact binary fractions land on the midpoint
     [Theory]
     [InlineData(1152UL, "1.13 KB")] // 1.125
     [InlineData(1664UL, "1.63 KB")] // 1.625
@@ -134,7 +133,7 @@ public unsafe class ByteSizeTests
         Assert.Equal(expected, new ByteSize64(bytes).ToString());
     }
 
-    // Asks the C allocator behind NativeMemory how many bytes a block really holds.
+    // Usable size of a NativeMemory block, from the C allocator
     static nuint UsableSize(void* ptr)
     {
         if (OperatingSystem.IsMacOS())
