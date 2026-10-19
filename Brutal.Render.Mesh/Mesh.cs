@@ -234,8 +234,10 @@ public static partial class MeshExtensions
         {
             if (stride != nativeList.Stride)
             {
+                var oldList = nativeList;
                 nativeList = new NativeStrideList(stride, nativeList.Capacity);
                 mesh.SetVertexList(key, nativeList);
+                oldList.Dispose();
             }
         }
         else
@@ -279,7 +281,10 @@ public static partial class MeshExtensions
     /// Convenience function to set/replace vertices via NativeStrideSpan
     public static void SetVerticesFromData<TKey>(this IVertexBufferMap<TKey> mesh, TKey key, NativeStrideSpan data)
     {
+        // SetVertexList does not dispose the replaced list
+        mesh.TryGetVertexList(key, out var oldList);
         mesh.SetVertexList(key, NativeStrideList.FromSpan(data));
+        oldList?.Dispose();
     }
 
     /// Convenience function to set/replace vertices via Span

@@ -16,10 +16,17 @@ public static partial class ProcGenMeshLibrary
     /// <param name="up">Outputs up direction</param>
     private static void GetRightUp(float3 normal, out float3 right, out float3 up)
     {
-        right = float3.Cross(normal, GlobalUp);
         var dot = float3.Dot(normal, GlobalUp);
         if (MathF.Abs(dot) > 0.9999f)
-            right = GlobalRight * MathF.Sign(dot);
+        {
+            // Cross product with GlobalUp is unreliable here
+            var globalRight = GlobalRight * MathF.Sign(dot);
+            right = float3.Normalize(globalRight - normal * float3.Dot(globalRight, normal));
+        }
+        else
+        {
+            right = float3.NormalizeOrZero(float3.Cross(normal, GlobalUp));
+        }
         up = float3.Cross(right, normal);
     }
 
@@ -310,14 +317,8 @@ public static partial class ProcGenMeshLibrary
 
         var vPtr = vertices.Ptr.Cast<float3>().Offset(vStart);
         var vCount = vertices.Count - vStart;
-        for (var i = 0; i < vCount; ++i)
-        {
-            var uv = vPtr[i];
-            vPtr[i] =
-                ToroidialToCartesian(uv.X * resScale.X + resOffset.X, uv.Y * resScale.Y + resOffset.Y, radiusA, radiusB)
-                + origin;
-        }
 
+        // Must run before vPtr is overwritten with positions
         if (output.OutNormals != null)
         {
             var normals = output.OutNormals;
@@ -327,9 +328,22 @@ public static partial class ProcGenMeshLibrary
             for (var i = 0; i < vCount; ++i)
             {
                 var uv = vPtr[i];
-                var normal = float3.Normalize(uv - origin);
-                nPtr[vIndex++] = normal;
+                // Unit tube radius around a zero main radius gives the direction from the tube centre
+                nPtr[vIndex++] = ToroidialToCartesian(
+                    uv.X * resScale.X + resOffset.X,
+                    uv.Y * resScale.Y + resOffset.Y,
+                    0f,
+                    1f
+                );
             }
+        }
+
+        for (var i = 0; i < vCount; ++i)
+        {
+            var uv = vPtr[i];
+            vPtr[i] =
+                ToroidialToCartesian(uv.X * resScale.X + resOffset.X, uv.Y * resScale.Y + resOffset.Y, radiusA, radiusB)
+                + origin;
         }
     }
 
@@ -482,7 +496,7 @@ public static partial class ProcGenMeshLibrary
 
                 nPtr[vIndex++] = prevNormal;
                 nPtr[vIndex++] = normal;
-                nPtr[vIndex++] = (prevNormal + normal) * 0.5f;
+                nPtr[vIndex++] = float3.Normalize(prevNormal + normal);
 
                 prevNormal = normal;
             }
@@ -537,7 +551,7 @@ public static partial class ProcGenMeshLibrary
                 var uv = vPtr[i];
                 var angle = uv.X * scale;
                 var heightOffset = uv.Y * height;
-                var normal = right * MathF.Cos(angle) * radius + up * MathF.Sin(angle);
+                var normal = right * MathF.Cos(angle) + up * MathF.Sin(angle);
                 nPtr[i] = normal;
                 vPtr[i] = origin + normal * radius + axis * heightOffset;
             }
