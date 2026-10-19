@@ -36,7 +36,7 @@ public struct BitMask<T> : IEquatable<BitMask<T>>, IBitwiseOperators<BitMask<T>,
     /// Create a mask from a bit index, ie shifting it.
     public BitMask(byte bitIndex)
     {
-        _value = T.One << bitIndex;
+        _value = T.One << CheckBitIndex(bitIndex);
     }
 
     /// Create a mask with the given range of bit indices set.
@@ -49,7 +49,15 @@ public struct BitMask<T> : IEquatable<BitMask<T>>, IBitwiseOperators<BitMask<T>,
     public BitMask(params ReadOnlySpan<byte> bitIndices)
     {
         foreach (var bitIndex in bitIndices)
-            _value |= T.One << bitIndex;
+            _value |= T.One << CheckBitIndex(bitIndex);
+    }
+
+    /// Shift counts are masked to the width of T, so an unchecked out-of-range index would alias another bit.
+    static byte CheckBitIndex(int bitIndex)
+    {
+        if ((uint)bitIndex >= (uint)BitCount)
+            throw new ArgumentOutOfRangeException(nameof(bitIndex), bitIndex, $"Bit index must be in range [0, {BitCount})");
+        return (byte)bitIndex;
     }
 
     #region this[index/range] accessors
@@ -64,8 +72,8 @@ public struct BitMask<T> : IEquatable<BitMask<T>>, IBitwiseOperators<BitMask<T>,
     /// Get/set the value of a bit by its index.
     public bool this[Index bitIndex]
     {
-        get => Contains((byte)bitIndex.GetOffset(BitCount));
-        set => Set((byte)bitIndex.GetOffset(BitCount), value);
+        get => Contains(CheckBitIndex(bitIndex.GetOffset(BitCount)));
+        set => Set(CheckBitIndex(bitIndex.GetOffset(BitCount)), value);
     }
 
     /// Get/set the value of a range of bits.
