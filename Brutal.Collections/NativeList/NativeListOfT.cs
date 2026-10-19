@@ -97,7 +97,7 @@ public class NativeList<TValueType> : INativeList<TValueType>
     public void Free() => _nativeList.Free();
 
     /// <summary>
-    /// Returns an allocation-free enumerator, so foreach does not allocate
+    /// Returns an allocation-free enumerator
     /// </summary>
     public NativeListEnumerator<TValueType> GetEnumerator() => new(this);
 

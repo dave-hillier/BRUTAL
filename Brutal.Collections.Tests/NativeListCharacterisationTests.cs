@@ -1,8 +1,5 @@
 namespace Brutal.Collections.Tests;
 
-/// <summary>
-/// Behaviour of the untyped, byte-addressed <see cref="NativeList"/> that any rewrite must keep.
-/// </summary>
 public class NativeListCharacterisationTests
 {
     [Fact]

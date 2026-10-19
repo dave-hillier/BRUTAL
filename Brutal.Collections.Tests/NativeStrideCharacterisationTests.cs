@@ -1,8 +1,5 @@
 namespace Brutal.Collections.Tests;
 
-/// <summary>
-/// Behaviour of <see cref="NativeStrideList"/> that any rewrite must keep.
-/// </summary>
 public class NativeStrideListCharacterisationTests
 {
     [Fact]
@@ -167,9 +164,6 @@ public class NativeStrideListCharacterisationTests
     }
 }
 
-/// <summary>
-/// Behaviour of <see cref="NativeStrideSpan"/> that any rewrite must keep.
-/// </summary>
 public class NativeStrideSpanCharacterisationTests
 {
     [Fact]

@@ -1,8 +1,5 @@
 namespace Brutal.Collections.Tests;
 
-/// <summary>
-/// Behaviour of <see cref="NativeList{TValueType}"/> that any rewrite must keep.
-/// </summary>
 public class NativeListOfTCharacterisationTests
 {
     private struct Vertex

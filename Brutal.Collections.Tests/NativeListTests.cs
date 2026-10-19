@@ -3,9 +3,6 @@ using System.Runtime.InteropServices;
 
 namespace Brutal.Collections.Tests;
 
-/// <summary>
-/// Tests for the untyped, byte-addressed <see cref="NativeList"/>.
-/// </summary>
 public class UntypedNativeListTests
 {
     [StructLayout(LayoutKind.Sequential)]
@@ -16,8 +13,7 @@ public class UntypedNativeListTests
     }
 
     /// <summary>
-    /// Turns a failed Debug.Assert into an exception instead of Environment.FailFast,
-    /// so a broken invariant inside the library fails the test rather than killing the test host.
+    /// Makes a failed Debug.Assert throw instead of calling Environment.FailFast, which would kill the test host.
     /// </summary>
     private sealed class ThrowingTraceListener : TraceListener
     {
@@ -46,7 +42,7 @@ public class UntypedNativeListTests
     public void AddingAStructLargerThanTheCurrentContents_GrowsCapacityToAtLeastTheNewSize()
     {
         using var list = new NativeList();
-        list.Add((byte)1); // Size 1, Capacity 4
+        list.Add((byte)1);
 
         list.Add(new SixteenBytes { A = 2, B = 3 });
 
@@ -74,7 +70,7 @@ public class UntypedNativeListTests
     [Fact]
     public void InsertingAByteIntoAFullList_GrowsCapacityToAtLeastTheNewSize()
     {
-        using var list = new NativeList([1, 2, 3, 4]); // Size 4, Capacity 4
+        using var list = new NativeList([1, 2, 3, 4]);
 
         list.Insert(ByteSize.Of(0), (byte)9);
 
@@ -87,7 +83,7 @@ public class UntypedNativeListTests
     [Fact]
     public void InsertingATypedValueIntoAFullList_GrowsCapacityToAtLeastTheNewSize()
     {
-        using var list = new NativeList([1, 2, 3, 4]); // Size 4, Capacity 4
+        using var list = new NativeList([1, 2, 3, 4]);
 
         list.Insert(ByteSize.Of(0), 0x0A0B0C0D);
 
@@ -138,8 +134,7 @@ public class UntypedNativeListTests
     {
         using var list = new NativeList([1, 2, 3, 4]);
 
-        // Only 2 bytes exist from index 2. A numBytes larger than Size cannot be used here:
-        // the unsigned Size - numBytes wraps and the library performs a huge Mem.Copy, crashing the host.
+        // Only 2 bytes exist from index 2.
         var exception = Record.Exception(() => list.RemoveAt(ByteSize.Of(2), ByteSize.Of(3)));
 
         Assert.True(
