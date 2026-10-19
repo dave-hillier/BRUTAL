@@ -248,8 +248,9 @@ public interface IBooleanVector<TSelf, T> : IVector<TSelf, T>
     bool All { get; }
 }
 
-/* TResult is what C# promotion gives the component: int for sbyte, byte, short and ushort, and the
- * component itself for int, uint, long and ulong. The square roots are TRoot, since a sqrt has no
+/* TResult is what C# promotion gives the component: int for sbyte and byte, and the component itself
+ * for int, uint, long and ulong. short and ushort take long instead, because one 16-bit square
+ * already fills an int, so a sum of them would wrap. The square roots are TRoot, since a sqrt has no
  * integer answer: float for the 4-byte-and-under components, double for the 8-byte ones, whose
  * magnitude float cannot hold.
  * T is no longer contravariant, because the magnitude returns TRoot and the reductions return
@@ -258,7 +259,7 @@ public interface IBooleanVector<TSelf, T> : IVector<TSelf, T>
 /// <summary>Defines a integer vector type.</summary>
 /// <typeparam name="TSelf">The type that implements the interface.</typeparam>
 /// <typeparam name="T">The component type.</typeparam>
-/// <typeparam name="TResult">What a reduction returns: the C# promotion of <typeparamref name="T" />.</typeparam>
+/// <typeparam name="TResult">What a reduction returns: the C# promotion of <typeparamref name="T" />, or long for the 16-bit components.</typeparam>
 /// <typeparam name="TRoot">What a square root returns: float, or double for the 8-byte components.</typeparam>
 public interface IIntegerVector<TSelf, T, TResult, TRoot>
     : INumericVector<TSelf, T>,

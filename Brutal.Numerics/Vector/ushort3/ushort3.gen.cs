@@ -8,7 +8,7 @@ namespace Brutal.Numerics;
 /// </summary>
 [DebuggerTypeProxy(typeof(VectorDebugView3<ushort3, ushort, float>))]
 public partial struct ushort3 : IVector3<ushort3, ushort>
-    , IIntegerVector<ushort3, ushort, int, float>
+    , IIntegerVector<ushort3, ushort, long, float>
     , ICrossProduct<ushort3>
 {
     /// <inheritdoc />

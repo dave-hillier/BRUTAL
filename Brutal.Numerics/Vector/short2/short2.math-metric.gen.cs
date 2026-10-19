@@ -14,7 +14,7 @@ public partial struct short2
 
     /// <inheritdoc />
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public readonly int LengthSquared()
+    public readonly long LengthSquared()
     {
         return Dot(this, this);
     }
@@ -28,15 +28,15 @@ public partial struct short2
 
     /// <inheritdoc cref="Vector2.DistanceSquared" />
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static int DistanceSquared(short2 a, short2 b)
+    public static long DistanceSquared(short2 a, short2 b)
     {
-        return (a.X - b.X) * (a.X - b.X) + (a.Y - b.Y) * (a.Y - b.Y);
+        return ((long)a.X - b.X) * ((long)a.X - b.X) + ((long)a.Y - b.Y) * ((long)a.Y - b.Y);
     }
 
     /// <inheritdoc cref="Vector2.Dot" />
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static int Dot(short2 a, short2 b)
+    public static long Dot(short2 a, short2 b)
     {
-        return a.X * b.X + a.Y * b.Y;
+        return (long)a.X * b.X + (long)a.Y * b.Y;
     }
 }

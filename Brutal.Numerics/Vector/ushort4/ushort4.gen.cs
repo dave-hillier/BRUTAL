@@ -8,7 +8,7 @@ namespace Brutal.Numerics;
 /// </summary>
 [DebuggerTypeProxy(typeof(VectorDebugView4<ushort4, ushort, float>))]
 public partial struct ushort4 : IVector4<ushort4, ushort>
-    , IIntegerVector<ushort4, ushort, int, float>
+    , IIntegerVector<ushort4, ushort, long, float>
 {
     /// <inheritdoc />
     public static int ComponentSize => sizeof(ushort);
