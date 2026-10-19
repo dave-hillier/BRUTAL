@@ -35,7 +35,6 @@ public class Atlas2DPartitionerTests
     [Fact]
     public void Atlas2DPartitioner_over_a_sub_partition_stays_inside_it()
     {
-        // A 256x256 region at (256, 0) of a 512x512 image, e.g. a slot handed out by a QuadTreePartitioner
         var full = FullImagePartition(512, 512);
         var backing = full with
         {
@@ -71,7 +70,6 @@ public class Atlas2DPartitionerTests
     [Fact]
     public void Atlas2DPartitioner_over_an_offset_sub_partition_reuses_a_freed_slot()
     {
-        // A 256x256 region at (256, 256) of a 512x512 image, offset on both axes
         var full = FullImagePartition(512, 512);
         var backing = full with
         {
