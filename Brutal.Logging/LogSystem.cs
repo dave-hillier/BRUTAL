@@ -33,8 +33,12 @@ public static class LogSystem
     public static void Initialize(Action<ILoggingBuilder> builder)
     {
         IsEnabled = true;
-        Factory = LoggerFactory.Create(builder);
-        foreach (var (categoryName, category) in LogCategory.Categories)
-            category.Logger = Factory.CreateLogger(categoryName);
+        var factory = LoggerFactory.Create(builder);
+        lock (LogCategory.CategoriesLock)
+        {
+            Factory = factory;
+            foreach (var (categoryName, category) in LogCategory.Categories)
+                category.Logger = factory.CreateLogger(categoryName);
+        }
     }
 }

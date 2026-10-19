@@ -20,12 +20,18 @@ public sealed class LogCategory
     internal static readonly Dictionary<string, LogCategory> Categories = [];
 
     /// <summary>
+    /// Guards <see cref="Categories"/>, and <see cref="LogSystem.Factory"/> together with it.
+    /// </summary>
+    internal static readonly Lock CategoriesLock = new();
+
+    /// <summary>
     /// Gets a logging category by name.
     /// </summary>
     /// <exception cref="KeyNotFoundException">Thrown if the category does not exist.</exception>
     public static LogCategory Get(string categoryName)
     {
-        return Categories[categoryName];
+        lock (CategoriesLock)
+            return Categories[categoryName];
     }
 
     /// <summary>
@@ -33,7 +39,8 @@ public sealed class LogCategory
     /// </summary>
     public static bool TryGet(string categoryName, [MaybeNullWhen(false)] out LogCategory category)
     {
-        return Categories.TryGetValue(categoryName, out category);
+        lock (CategoriesLock)
+            return Categories.TryGetValue(categoryName, out category);
     }
 
     /// <summary>
@@ -41,13 +48,16 @@ public sealed class LogCategory
     /// </summary>
     public static LogCategory Make(string categoryName)
     {
-        if (Categories.TryGetValue(categoryName, out var category))
+        lock (CategoriesLock)
+        {
+            if (Categories.TryGetValue(categoryName, out var category))
+                return category;
+
+            category = new LogCategory(categoryName) { Logger = LogSystem.Factory?.CreateLogger(categoryName) };
+
+            Categories[categoryName] = category;
             return category;
-
-        category = new LogCategory(categoryName) { Logger = LogSystem.Factory?.CreateLogger(categoryName) };
-
-        Categories[categoryName] = category;
-        return category;
+        }
     }
 
     #endregion
