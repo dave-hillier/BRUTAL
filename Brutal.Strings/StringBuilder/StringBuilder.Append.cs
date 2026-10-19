@@ -15,6 +15,20 @@ public partial struct ValueStringBuilder<TChar>
         return GetSpan(Math.Max(contentSizeHint, Math.Abs(alignment)));
     }
 
+    /// GetSpan for a retry after a partial write into FreeSpan: restores the null terminator if growing throws.
+    private Span<TChar> GetSpanAfterPartialWrite(int sizeHint)
+    {
+        try
+        {
+            return GetSpan(sizeHint);
+        }
+        catch
+        {
+            Fail();
+            throw;
+        }
+    }
+
     private void Align(Span<TChar> destination, ref int elementsWritten, int alignment)
     {
         if (alignment == 0)
@@ -23,7 +37,7 @@ public partial struct ValueStringBuilder<TChar>
         // Alignment is based on grapheme count, which means we may write more than "alignment",
         // i.e. more than we pre-grew for - retry until it fits.
         while (!Utf<TChar>.TryAlign(destination, ref elementsWritten, alignment))
-            destination = GetSpan(destination.Length + 1);
+            destination = GetSpanAfterPartialWrite(destination.Length + 1);
     }
 
     /// Pads content already written and advanced since <paramref name="start"/> to <paramref name="alignment"/>,
@@ -51,12 +65,12 @@ public partial struct ValueStringBuilder<TChar>
     {
         var sizeHint = Math.Abs(alignment);
 
-        Span<TChar> destination;
+        var destination = GetSpan(sizeHint);
         int elementsWritten;
-        while (!Utf<TChar>.TryFormat(value, destination = GetSpan(sizeHint), out elementsWritten, format, provider))
+        while (!Utf<TChar>.TryFormat(value, destination, out elementsWritten, format, provider))
         {
             // Format didn't fit - ask for strictly more than what we just got (progress guarantee).
-            sizeHint = destination.Length + 1;
+            destination = GetSpanAfterPartialWrite(destination.Length + 1);
         }
 
         Align(destination, ref elementsWritten, alignment);
