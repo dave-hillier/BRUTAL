@@ -90,8 +90,7 @@ public partial class LString
     [MemberNotNull(nameof(_localizedString))]
     private void BuildReplacements(string localizedString, bool isInitialBuild)
     {
-        // Build the new state in locals and only assign it once localizedString has been validated,
-        // so a rejected localizedString leaves this LString unchanged.
+        // Build into locals so a rejected localizedString leaves this LString unchanged
         var templateReplacementCount = _replacements.Count;
         Span<Replacement> replacements = isInitialBuild ? default
             : templateReplacementCount <= MaxReplacementCount
@@ -153,9 +152,8 @@ public partial class LString
     }
 
     /// <summary>
-    /// Finds the template replacement whose text matches replacementText, skipping any already assigned in this build,
-    /// so the nth occurrence of a repeated variable maps to its nth occurrence in the template, the same as the
-    /// positional mapping used by the constructor.
+    /// Finds the first unassigned template replacement matching replacementText, so the nth occurrence of a
+    /// repeated variable maps to its nth occurrence in the template.
     /// </summary>
     private ushort GetTemplateStringReplacementIndex(
         ReadOnlySpan<char> replacementText,

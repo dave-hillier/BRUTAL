@@ -14,10 +14,10 @@ public class LStringTests
     }
 
     [Theory]
-    // Right placeholder count, unknown name: throws inside the build loop after earlier entries were built.
+    // Unknown placeholder name
     [InlineData(null, "Yo {C} {X}", "Hi {N} {C}", "Hi b 3")]
     [InlineData("Yo {C} {N}", "Yo {N} {X}", "Yo {C} {N}", "Yo 3 b")]
-    // Too many placeholders: throws inside the build loop on the extra occurrence.
+    // Too many placeholders
     [InlineData(null, "Yo {C} {N} {N}", "Hi {N} {C}", "Hi b 3")]
     [InlineData("Yo {C} {N}", "Yo {N} {C} {X}", "Yo {C} {N}", "Yo 3 b")]
     public void Localize_rejected_mid_build_leaves_LString_unchanged(
