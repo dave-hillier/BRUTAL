@@ -1,9 +1,6 @@
 namespace Brutal.Numerics.Tests;
 
-// Normalize follows the glTF / Vulkan SNORM and UNORM rules:
-//   signed unpack:   max(c / Max, -1)          signed pack:   round(clamp(x, -1, 1) * Max)
-//   unsigned unpack: c / Max                   unsigned pack: round(clamp(x,  0, 1) * Max)
-// so Pack(Unpack(c)) == c for every c except signed MinValue, which shares -1.0 with -Max.
+// SNORM/UNORM: Pack(Unpack(c)) == c except signed MinValue, which shares -1.0 with -Max
 public class PackUtilsRoundTripTests
 {
     private const Pack.Float P = Pack.Float.Normalize;

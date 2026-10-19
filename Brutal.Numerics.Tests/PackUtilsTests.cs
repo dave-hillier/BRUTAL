@@ -54,7 +54,7 @@ public class PackUtilsTests
     public void SByte_Normalize_RoundTrip_Negative()
     {
         sbyte v = -64;
-        var f = PackUtils.SByte.ToFloat(v, Unpack.Float.Normalize); // -64 / 127
+        var f = PackUtils.SByte.ToFloat(v, Unpack.Float.Normalize);
         Assert.Equal(v, PackUtils.Float.ToSByte(f, Pack.Float.Normalize));
     }
 

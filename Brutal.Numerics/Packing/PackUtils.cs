@@ -19,8 +19,7 @@ public static class PackModes
     ///     Will map the value to the range [0, 1] and then multiply by the max value of the target type.
     ///     The value should be in the range [0, 1] for unsigned conversions, and [-1, 1] for signed conversions.
     ///     Invalid for integer to integer conversions.
-    ///     Follows the glTF / Vulkan UNORM and SNORM rules: unpacking computes c / Max (signed results are clamped
-    ///     to -1, so MinValue and -Max both give -1), and packing computes round(clamp(x, -1 or 0, 1) * Max).
+    ///     Follows the glTF / Vulkan UNORM and SNORM rules, so signed MinValue and -Max both unpack to -1.
     /// </summary>
     public const int Normalize = 2;
 
