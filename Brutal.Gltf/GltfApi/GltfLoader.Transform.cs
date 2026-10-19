@@ -54,6 +54,7 @@ public static partial class GltfLoaderExtensions
     /// </list>
     /// </para>
     /// </summary>
+    /// <exception cref="NotSupportedException">An affected accessor is in an interleaved bufferView; the model is left unmodified.</exception>
     public static void FlipHandedness(this GltfLoader loader) => FlipZAxis(loader);
 
     /// <summary>
@@ -73,6 +74,7 @@ public static partial class GltfLoaderExtensions
     /// </list>
     /// </para>
     /// </summary>
+    /// <exception cref="NotSupportedException">An affected accessor is in an interleaved bufferView; the model is left unmodified.</exception>
     public static void FlipZAxis(this GltfLoader loader) =>
         FlipAxisImpl(loader, OffZ, OffX, OffY, [M31, M32, M34, M13, M23, M43]);
 
@@ -93,6 +95,7 @@ public static partial class GltfLoaderExtensions
     /// </list>
     /// </para>
     /// </summary>
+    /// <exception cref="NotSupportedException">An affected accessor is in an interleaved bufferView; the model is left unmodified.</exception>
     public static void FlipXAxis(this GltfLoader loader) =>
         FlipAxisImpl(loader, OffX, OffY, OffZ, [M12, M13, M14, M21, M31, M41]);
 
@@ -113,6 +116,7 @@ public static partial class GltfLoaderExtensions
     /// </list>
     /// </para>
     /// </summary>
+    /// <exception cref="NotSupportedException">An affected accessor is in an interleaved bufferView; the model is left unmodified.</exception>
     public static void FlipYAxis(this GltfLoader loader) =>
         FlipAxisImpl(loader, OffY, OffX, OffZ, [M21, M23, M24, M12, M32, M42]);
 
@@ -133,6 +137,7 @@ public static partial class GltfLoaderExtensions
     /// </list>
     /// </para>
     /// </summary>
+    /// <exception cref="NotSupportedException">An affected accessor is in an interleaved bufferView; the model is left unmodified.</exception>
     public static void SwapYZAxes(this GltfLoader loader) =>
         SwapAxesImpl(loader, OffY, OffZ, [M12, M13, M21, M31, M22, M33, M23, M32, M24, M34, M42, M43]);
 
@@ -153,6 +158,7 @@ public static partial class GltfLoaderExtensions
     /// </list>
     /// </para>
     /// </summary>
+    /// <exception cref="NotSupportedException">An affected accessor is in an interleaved bufferView; the model is left unmodified.</exception>
     public static void SwapXYAxes(this GltfLoader loader) =>
         SwapAxesImpl(loader, OffX, OffY, [M11, M22, M12, M21, M13, M23, M14, M24, M31, M32, M41, M42]);
 
@@ -173,6 +179,7 @@ public static partial class GltfLoaderExtensions
     /// </list>
     /// </para>
     /// </summary>
+    /// <exception cref="NotSupportedException">An affected accessor is in an interleaved bufferView; the model is left unmodified.</exception>
     public static void SwapXZAxes(this GltfLoader loader) =>
         SwapAxesImpl(loader, OffX, OffZ, [M11, M33, M12, M32, M13, M31, M14, M34, M21, M23, M41, M43]);
 
@@ -194,8 +201,10 @@ public static partial class GltfLoaderExtensions
     /// </list>
     /// </para>
     /// </summary>
+    /// <exception cref="NotSupportedException">An affected accessor is in an interleaved bufferView; the model is left unmodified.</exception>
     public static void Scale(this GltfLoader loader, float scale)
     {
+        ThrowIfAnyTransformedAccessorIsInterleaved(loader, positionalOnly: true);
         var gltf = loader.GltfJson;
         var processedAccessors = ArrayPool<bool>.Shared.Rent(gltf.Accessors.Length);
         Array.Clear(processedAccessors, 0, gltf.Accessors.Length);
@@ -254,6 +263,71 @@ public static partial class GltfLoaderExtensions
     }
 
     #region Private helpers
+
+    /// <summary>
+    /// The component helpers below assume tightly packed elements, so interleaved accessors are rejected
+    /// before anything is modified.
+    /// </summary>
+    /// <param name="positionalOnly">True for <see cref="Scale"/>, which skips normals, tangents, indices and rotations.</param>
+    private static void ThrowIfAnyTransformedAccessorIsInterleaved(GltfLoader loader, bool positionalOnly)
+    {
+        var gltf = loader.GltfJson;
+
+        foreach (var mesh in gltf.Meshes)
+        foreach (var prim in mesh.Primitives)
+        {
+            if (prim == null)
+                continue;
+
+            if (prim.Attributes.TryGetValue("POSITION", out var posIdx))
+                ThrowIfInterleaved(gltf, posIdx, "POSITION");
+
+            if (positionalOnly)
+                continue;
+
+            if (prim.Attributes.TryGetValue("NORMAL", out var normIdx))
+                ThrowIfInterleaved(gltf, normIdx, "NORMAL");
+            if (prim.Attributes.TryGetValue("TANGENT", out var tangIdx))
+                ThrowIfInterleaved(gltf, tangIdx, "TANGENT");
+            if (prim.Indices.HasValue)
+                ThrowIfInterleaved(gltf, prim.Indices.Value, "indices");
+        }
+
+        if (gltf.Skins != null)
+            foreach (var skin in gltf.Skins)
+                if (skin.InverseBindMatrices.HasValue)
+                    ThrowIfInterleaved(gltf, skin.InverseBindMatrices.Value, "inverse bind matrices");
+
+        if (gltf.Animations != null)
+            foreach (var anim in gltf.Animations)
+            foreach (var channel in anim.Channels)
+            {
+                if (channel.Target.Node == null)
+                    continue;
+                var path = channel.Target.Path;
+                if (
+                    path == AnimationChannelTarget.PathEnum.Translation
+                    || (!positionalOnly && path == AnimationChannelTarget.PathEnum.Rotation)
+                )
+                    ThrowIfInterleaved(gltf, anim.Samplers[channel.Sampler].Output, $"animation {path} output");
+            }
+    }
+
+    private static void ThrowIfInterleaved(Gltf gltf, int accessorIndex, string usage)
+    {
+        var accessor = gltf.Accessors[accessorIndex];
+        if (accessor.BufferView is null)
+            return; // rejected by GetAccessorBufferSpan
+
+        var byteStride = gltf.BufferViews[accessor.BufferView.Value].ByteStride;
+        var elementSize = (int)accessor.ElementSize();
+        if (byteStride is { } stride && stride != elementSize)
+            throw new NotSupportedException(
+                $"Cannot transform accessor {accessorIndex} ({usage}): its bufferView {accessor.BufferView.Value} "
+                    + $"is interleaved with byteStride {stride}, but axis transforms only support tightly packed "
+                    + $"accessors (element size {elementSize}). The model has not been modified."
+            );
+    }
 
     /// <summary>
     /// Iterates over a raw accessor buffer treating it as an array of fixed-size elements and
@@ -349,6 +423,7 @@ public static partial class GltfLoaderExtensions
         ReadOnlySpan<int> matOffsets
     )
     {
+        ThrowIfAnyTransformedAccessorIsInterleaved(loader, positionalOnly: false);
         var gltf = loader.GltfJson;
         var processedAccessors = ArrayPool<bool>.Shared.Rent(gltf.Accessors.Length);
         Array.Clear(processedAccessors, 0, gltf.Accessors.Length);
@@ -463,6 +538,7 @@ public static partial class GltfLoaderExtensions
     //                        Encodes P*mat*P for the corresponding axis permutation P.
     private static void SwapAxesImpl(GltfLoader loader, int vecOffA, int vecOffB, ReadOnlySpan<int> matSwapPairs)
     {
+        ThrowIfAnyTransformedAccessorIsInterleaved(loader, positionalOnly: false);
         var gltf = loader.GltfJson;
         var processedAccessors = ArrayPool<bool>.Shared.Rent(gltf.Accessors.Length);
         Array.Clear(processedAccessors, 0, gltf.Accessors.Length);

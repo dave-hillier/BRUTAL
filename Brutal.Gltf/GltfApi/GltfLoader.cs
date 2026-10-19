@@ -308,8 +308,11 @@ public static partial class GltfLoaderExtensions
         var bufferView = loader.GltfJson.BufferViews[accessor.BufferView.Value];
         var bufferViewSpan = loader.GetBufferView(accessor.BufferView.Value);
 
-        var stride = bufferView.ByteStride ?? (int)accessor.ElementSize();
-        return bufferViewSpan.Slice(accessor.ByteOffset, accessor.Count * stride);
+        var elementSize = (int)accessor.ElementSize();
+        var stride = bufferView.ByteStride ?? elementSize;
+        // The last element only occupies elementSize bytes, not a full stride (glTF 2.0 3.6.2.4)
+        var length = accessor.Count == 0 ? 0 : (accessor.Count - 1) * stride + elementSize;
+        return bufferViewSpan.Slice(accessor.ByteOffset, length);
     }
 
     /// <summary>
