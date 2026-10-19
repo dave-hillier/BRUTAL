@@ -13,15 +13,10 @@ runner.ExecuteJobs(
         Console.WriteLine($"COMPLETED result={result} jobsAfterThrowRan={jobAfterThrow.RunCount}")
 );
 
-var deadline = DateTime.UtcNow.AddSeconds(10);
-while (runner.State != JobState.Idle)
+if (!SpinWait.SpinUntil(() => runner.State == JobState.Idle, TimeSpan.FromSeconds(10)))
 {
-    if (DateTime.UtcNow > deadline)
-    {
-        Console.WriteLine("TIMEOUT");
-        return 2;
-    }
-    Thread.Sleep(1);
+    Console.WriteLine("TIMEOUT");
+    return 2;
 }
 
 // Give a crashing ThreadPool thread time to tear the process down if it is going to.
