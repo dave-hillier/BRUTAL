@@ -42,9 +42,14 @@ public interface IFreeListIndexPool
 public class FreeListIndexPool : IFreeListIndexPool
 {
     /// <summary>
-    /// Empty element index not part of linked list of free elements
+    /// Occupied element index not part of linked list of free elements
     /// </summary>
     const int OCCUPIED = -1;
+
+    /// <summary>
+    /// Terminates the linked list of free elements
+    /// </summary>
+    const int END_OF_FREE_LIST = -2;
 
     /// <summary>
     /// Construct a new free list, that is empty and can grow
@@ -67,7 +72,7 @@ public class FreeListIndexPool : IFreeListIndexPool
     }
 
     private readonly List<int> _list;
-    private int _firstFree = OCCUPIED;
+    private int _firstFree = END_OF_FREE_LIST;
 
     /// <summary>
     /// If true, the list will grow when full, if false, it will throw an exception
@@ -95,12 +100,12 @@ public class FreeListIndexPool : IFreeListIndexPool
     /// <inheritdoc/>
     public bool IsEmpty(int index)
     {
-        return _list[index] == OCCUPIED;
+        return _list[index] != OCCUPIED;
     }
 
     public bool TryAdd(out int index)
     {
-        if (_firstFree != OCCUPIED)
+        if (_firstFree != END_OF_FREE_LIST)
         {
             index = _firstFree;
             _firstFree = _list[index];
@@ -132,6 +137,9 @@ public class FreeListIndexPool : IFreeListIndexPool
     /// <inheritdoc/>
     public void Remove(int index)
     {
+        if (_list[index] != OCCUPIED)
+            throw new InvalidOperationException("FreeListIndexPool element is already empty");
+
         _list[index] = _firstFree;
         _firstFree = index;
     }
@@ -140,6 +148,6 @@ public class FreeListIndexPool : IFreeListIndexPool
     public void Clear()
     {
         _list.Clear();
-        _firstFree = OCCUPIED;
+        _firstFree = END_OF_FREE_LIST;
     }
 }
